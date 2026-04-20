@@ -1,0 +1,18 @@
+{
+  "extends": ["config:recommended", "docker:enableMajor", ":automergeMinor"],
+  "rangeStrategy": "auto",
+  "labels": ["Renovate"],
+  "semanticCommits": "enabled",
+  "packageRules": [
+    {
+      "groupName": "Typescript Types",
+      "matchPackageNames": ["/^@types//"]
+    },
+    {
+      "separateMultipleMajor": true,
+      "allowedVersions": "^22",
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["docker-hub-remote.bahnhub.tech.rz.db.de/node"]
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+# Pin 16.x to avoid Postgres 18+ layout conflicts with unpinned postgres:latest.
+# For official 18+ images, mount the volume at /var/lib/postgresql (see postgres image docs).
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: trivyexplorer
+      POSTGRES_USER: trivy
+      POSTGRES_PASSWORD: trivy
+    ports:
+      - "5432:5432"
+    volumes:
+      - trivy_pg_data:/var/lib/postgresql/data
+
+volumes:
+  trivy_pg_data:

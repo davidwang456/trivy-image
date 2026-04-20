@@ -1,0 +1,22 @@
+server:
+  port: 8081
+
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/trivyexplorer
+    username: trivy
+    password: trivy
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+    properties:
+      hibernate:
+        jdbc:
+          lob:
+            non_contextual_creation: true
+
+# Linux: Trivy must be installed and on PATH, or set trivy.executable to an absolute path.
+trivy:
+  executable: trivy
+  timeout-seconds: 600

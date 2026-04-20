@@ -1,0 +1,544 @@
+{
+  "SchemaVersion": 2,
+  "ArtifactName": "dummy-image:2.0.0",
+  "ArtifactType": "container_image",
+  "Metadata": {},
+  "Results": [
+    {
+      "Target": "dummy-image:2.0.0",
+      "Class": "",
+      "Type": "",
+      "Vulnerabilities": [
+        {
+          "VulnerabilityID": "CVE-0000-0000-1",
+          "PkgName": "my-lib1.0",
+          "InstalledVersion": "1.0.0",
+          "FixedVersion": "1.0.1",
+          "PrimaryURL": "https://example.org",
+          "Title": "my-lib1.0: a serious vulnerability",
+          "Description": "Some content should be here",
+          "Severity": "HIGH"
+        },
+        {
+          "VulnerabilityID": "CVE-0000-0000-2",
+          "PkgName": "my-lib2.0",
+          "InstalledVersion": "2.0.0",
+          "FixedVersion": "2.0.1",
+          "PrimaryURL": "https://example.org",
+          "Title": "my-lib2.0: a serious vulnerability",
+          "Description": "Some content should be here",
+          "Severity": "MEDIUM"
+        },
+        {
+          "VulnerabilityID": "CVE-0000-0000-3",
+          "PkgName": "my-lib3.0",
+          "InstalledVersion": "3.0.0",
+          "FixedVersion": "3.0.1",
+          "PrimaryURL": "https://example.org",
+          "Title": "my-lib3.0: a serious vulnerability",
+          "Description": "Some content should be here",
+          "Severity": "LOW"
+        },
+        {
+          "VulnerabilityID": "CVE-0000-0000-4",
+          "PkgName": "my-lib4.0",
+          "InstalledVersion": "4.0.0",
+          "FixedVersion": "4.0.1",
+          "PrimaryURL": "https://example.org",
+          "Title": "my-lib4.0: a serious vulnerability",
+          "Description": "Some content should be here",
+          "Severity": "CRITICAL"
+        },
+        {
+          "VulnerabilityID": "CVE-0000-0000-5",
+          "PkgName": "my-lib5.0",
+          "InstalledVersion": "5.0.0",
+          "FixedVersion": "5.0.1",
+          "PrimaryURL": "https://example.org",
+          "Title": "my-lib5.0: a serious vulnerability",
+          "Description": "Some content should be here",
+          "Severity": "HIGH"
+        },
+        {
+          "VulnerabilityID": "CVE-0000-0000-6",
+          "PkgName": "my-lib6.0",
+          "InstalledVersion": "6.0.0",
+          "FixedVersion": "6.0.1",
+          "PrimaryURL": "https://example.org",
+          "Title": "my-lib6.0: a serious vulnerability",
+          "Description": "Some content should be here",
+          "Severity": "MEDIUM"
+        },
+        {
+          "VulnerabilityID": "CVE-0000-0000-7",
+          "PkgName": "my-lib7.0",
+          "InstalledVersion": "7.0.0",
+          "FixedVersion": "7.0.1",
+          "PrimaryURL": "https://example.org",
+          "Title": "my-lib7.0: a serious vulnerability",
+          "Description": "Some content should be here",
+          "Severity": "LOW"
+        },
+        {
+          "VulnerabilityID": "CVE-0000-0000-8",
+          "PkgName": "my-lib8.0",
+          "InstalledVersion": "8.0.0",
+          "FixedVersion": "8.0.1",
+          "PrimaryURL": "https://example.org",
+          "Title": "my-lib8.0: a serious vulnerability",
+          "Description": "Some content should be here",
+          "Severity": "CRITICAL"
+        },
+        {
+          "VulnerabilityID": "CVE-0000-0000-9",
+          "PkgName": "my-lib9.0",
+          "InstalledVersion": "9.0.0",
+          "FixedVersion": "9.0.1",
+          "PrimaryURL": "https://example.org",
+          "Title": "my-lib9.0: a serious vulnerability",
+          "Description": "Some content should be here",
+          "Severity": "HIGH"
+        },
+        {
+          "VulnerabilityID": "CVE-0000-0000-10",
+          "PkgName": "my-lib10.0",
+          "InstalledVersion": "10.0.0",
+          "FixedVersion": "10.0.1",
+          "PrimaryURL": "https://example.org",
+          "Title": "my-lib10.0: a serious vulnerability",
+          "Description": "Some content should be here",
+          "Severity": "MEDIUM"
+        },
+        {
+          "VulnerabilityID": "CVE-0000-0000-11",
+          "PkgName": "my-lib11.0",
+          "InstalledVersion": "11.0.0",
+          "FixedVersion": "11.0.1",
+          "PrimaryURL": "https://example.org",
+          "Title": "my-lib11.0: a serious vulnerability",
+          "Description": "Some content should be here",
+          "Severity": "LOW"
+        },
+        {
+          "VulnerabilityID": "CVE-0000-0000-12",
+          "PkgName": "my-lib12.0",
+          "InstalledVersion": "12.0.0",
+          "FixedVersion": "12.0.1",
+          "PrimaryURL": "https://example.org",
+          "Title": "my-lib12.0: a serious vulnerability",
+          "Description": "Some content should be here",
+          "Severity": "CRITICAL"
+        },
+        {
+          "VulnerabilityID": "CVE-0000-0000-13",
+          "PkgName": "my-lib13.0",
+          "InstalledVersion": "13.0.0",
+          "FixedVersion": "13.0.1",
+          "PrimaryURL": "https://example.org",
+          "Title": "my-lib13.0: a serious vulnerability",
+          "Description": "Some content should be here",
+          "Severity": "HIGH"
+        },
+        {
+          "VulnerabilityID": "CVE-0000-0000-14",
+          "PkgName": "my-lib14.0",
+          "InstalledVersion": "14.0.0",
+          "FixedVersion": "14.0.1",
+          "PrimaryURL": "https://example.org",
+          "Title": "my-lib14.0: a serious vulnerability",
+          "Description": "Some content should be here",
+          "Severity": "MEDIUM"
+        },
+        {
+          "VulnerabilityID": "CVE-0000-0000-15",
+          "PkgName": "my-lib15.0",
+          "InstalledVersion": "15.0.0",
+          "FixedVersion": "15.0.1",
+          "PrimaryURL": "https://example.org",
+          "Title": "my-lib15.0: a serious vulnerability",
+          "Description": "Some content should be here",
+          "Severity": "LOW"
+        },
+        {
+          "VulnerabilityID": "CVE-0000-0000-16",
+          "PkgName": "my-lib16.0",
+          "InstalledVersion": "16.0.0",
+          "FixedVersion": "16.0.1",
+          "PrimaryURL": "https://example.org",
+          "Title": "my-lib16.0: a serious vulnerability",
+          "Description": "Some content should be here",
+          "Severity": "CRITICAL"
+        },
+        {
+          "VulnerabilityID": "CVE-0000-0000-17",
+          "PkgName": "my-lib17.0",
+          "InstalledVersion": "17.0.0",
+          "FixedVersion": "17.0.1",
+          "PrimaryURL": "https://example.org",
+          "Title": "my-lib17.0: a serious vulnerability",
+          "Description": "Some content should be here",
+          "Severity": "HIGH"
+        },
+        {
+          "VulnerabilityID": "CVE-0000-0000-18",
+          "PkgName": "my-lib18.0",
+          "InstalledVersion": "18.0.0",
+          "FixedVersion": "18.0.1",
+          "PrimaryURL": "https://example.org",
+          "Title": "my-lib18.0: a serious vulnerability",
+          "Description": "Some content should be here",
+          "Severity": "MEDIUM"
+        },
+        {
+          "VulnerabilityID": "CVE-0000-0000-19",
+          "PkgName": "my-lib19.0",
+          "InstalledVersion": "19.0.0",
+          "FixedVersion": "19.0.1",
+          "PrimaryURL": "https://example.org",
+          "Title": "my-lib19.0: a serious vulnerability",
+          "Description": "Some content should be here",
+          "Severity": "LOW"
+        },
+        {
+          "VulnerabilityID": "CVE-0000-0000-20",
+          "PkgName": "my-lib20.0",
+          "InstalledVersion": "20.0.0",
+          "FixedVersion": "20.0.1",
+          "PrimaryURL": "https://example.org",
+          "Title": "my-lib20.0: a serious vulnerability",
+          "Description": "Some content should be here",
+          "Severity": "CRITICAL"
+        },
+        {
+          "VulnerabilityID": "CVE-0000-0000-21",
+          "PkgName": "my-lib21.0",
+          "InstalledVersion": "21.0.0",
+          "FixedVersion": "21.0.1",
+          "PrimaryURL": "https://example.org",
+          "Title": "my-lib21.0: a serious vulnerability",
+          "Description": "Some content should be here",
+          "Severity": "HIGH"
+        },
+        {
+          "VulnerabilityID": "CVE-0000-0000-22",
+          "PkgName": "my-lib22.0",
+          "InstalledVersion": "22.0.0",
+          "FixedVersion": "22.0.1",
+          "PrimaryURL": "https://example.org",
+          "Title": "my-lib22.0: a serious vulnerability",
+          "Description": "Some content should be here",
+          "Severity": "MEDIUM"
+        },
+        {
+          "VulnerabilityID": "CVE-0000-0000-23",
+          "PkgName": "my-lib23.0",
+          "InstalledVersion": "23.0.0",
+          "FixedVersion": "23.0.1",
+          "PrimaryURL": "https://example.org",
+          "Title": "my-lib23.0: a serious vulnerability",
+          "Description": "Some content should be here",
+          "Severity": "LOW"
+        },
+        {
+          "VulnerabilityID": "CVE-0000-0000-24",
+          "PkgName": "my-lib24.0",
+          "InstalledVersion": "24.0.0",
+          "FixedVersion": "24.0.1",
+          "PrimaryURL": "https://example.org",
+          "Title": "my-lib24.0: a serious vulnerability",
+          "Description": "Some content should be here",
+          "Severity": "CRITICAL"
+        },
+        {
+          "VulnerabilityID": "CVE-0000-0000-25",
+          "PkgName": "my-lib25.0",
+          "InstalledVersion": "25.0.0",
+          "FixedVersion": "25.0.1",
+          "PrimaryURL": "https://example.org",
+          "Title": "my-lib25.0: a serious vulnerability",
+          "Description": "Some content should be here",
+          "Severity": "HIGH"
+        },
+        {
+          "VulnerabilityID": "CVE-0000-0000-26",
+          "PkgName": "my-lib26.0",
+          "InstalledVersion": "26.0.0",
+          "FixedVersion": "26.0.1",
+          "PrimaryURL": "https://example.org",
+          "Title": "my-lib26.0: a serious vulnerability",
+          "Description": "Some content should be here",
+          "Severity": "MEDIUM"
+        },
+        {
+          "VulnerabilityID": "CVE-0000-0000-27",
+          "PkgName": "my-lib27.0",
+          "InstalledVersion": "27.0.0",
+          "FixedVersion": "27.0.1",
+          "PrimaryURL": "https://example.org",
+          "Title": "my-lib27.0: a serious vulnerability",
+          "Description": "Some content should be here",
+          "Severity": "LOW"
+        },
+        {
+          "VulnerabilityID": "CVE-0000-0000-28",
+          "PkgName": "my-lib28.0",
+          "InstalledVersion": "28.0.0",
+          "FixedVersion": "28.0.1",
+          "PrimaryURL": "https://example.org",
+          "Title": "my-lib28.0: a serious vulnerability",
+          "Description": "Some content should be here",
+          "Severity": "CRITICAL"
+        },
+        {
+          "VulnerabilityID": "CVE-0000-0000-29",
+          "PkgName": "my-lib29.0",
+          "InstalledVersion": "29.0.0",
+          "FixedVersion": "29.0.1",
+          "PrimaryURL": "https://example.org",
+          "Title": "my-lib29.0: a serious vulnerability",
+          "Description": "Some content should be here",
+          "Severity": "HIGH"
+        },
+        {
+          "VulnerabilityID": "CVE-0000-0000-30",
+          "PkgName": "my-lib30.0",
+          "InstalledVersion": "30.0.0",
+          "FixedVersion": "30.0.1",
+          "PrimaryURL": "https://example.org",
+          "Title": "my-lib30.0: a serious vulnerability",
+          "Description": "Some content should be here",
+          "Severity": "MEDIUM"
+        },
+        {
+          "VulnerabilityID": "CVE-0000-0000-31",
+          "PkgName": "my-lib31.0",
+          "InstalledVersion": "31.0.0",
+          "FixedVersion": "31.0.1",
+          "PrimaryURL": "https://example.org",
+          "Title": "my-lib31.0: a serious vulnerability",
+          "Description": "Some content should be here",
+          "Severity": "LOW"
+        },
+        {
+          "VulnerabilityID": "CVE-0000-0000-32",
+          "PkgName": "my-lib32.0",
+          "InstalledVersion": "32.0.0",
+          "FixedVersion": "32.0.1",
+          "PrimaryURL": "https://example.org",
+          "Title": "my-lib32.0: a serious vulnerability",
+          "Description": "Some content should be here",
+          "Severity": "CRITICAL"
+        },
+        {
+          "VulnerabilityID": "CVE-0000-0000-33",
+          "PkgName": "my-lib33.0",
+          "InstalledVersion": "33.0.0",
+          "FixedVersion": "33.0.1",
+          "PrimaryURL": "https://example.org",
+          "Title": "my-lib33.0: a serious vulnerability",
+          "Description": "Some content should be here",
+          "Severity": "HIGH"
+        },
+        {
+          "VulnerabilityID": "CVE-0000-0000-34",
+          "PkgName": "my-lib34.0",
+          "InstalledVersion": "34.0.0",
+          "FixedVersion": "34.0.1",
+          "PrimaryURL": "https://example.org",
+          "Title": "my-lib34.0: a serious vulnerability",
+          "Description": "Some content should be here",
+          "Severity": "MEDIUM"
+        },
+        {
+          "VulnerabilityID": "CVE-0000-0000-35",
+          "PkgName": "my-lib35.0",
+          "InstalledVersion": "35.0.0",
+          "FixedVersion": "35.0.1",
+          "PrimaryURL": "https://example.org",
+          "Title": "my-lib35.0: a serious vulnerability",
+          "Description": "Some content should be here",
+          "Severity": "LOW"
+        },
+        {
+          "VulnerabilityID": "CVE-0000-0000-36",
+          "PkgName": "my-lib36.0",
+          "InstalledVersion": "36.0.0",
+          "FixedVersion": "36.0.1",
+          "PrimaryURL": "https://example.org",
+          "Title": "my-lib36.0: a serious vulnerability",
+          "Description": "Some content should be here",
+          "Severity": "CRITICAL"
+        },
+        {
+          "VulnerabilityID": "CVE-0000-0000-37",
+          "PkgName": "my-lib37.0",
+          "InstalledVersion": "37.0.0",
+          "FixedVersion": "37.0.1",
+          "PrimaryURL": "https://example.org",
+          "Title": "my-lib37.0: a serious vulnerability",
+          "Description": "Some content should be here",
+          "Severity": "HIGH"
+        },
+        {
+          "VulnerabilityID": "CVE-0000-0000-38",
+          "PkgName": "my-lib38.0",
+          "InstalledVersion": "38.0.0",
+          "FixedVersion": "38.0.1",
+          "PrimaryURL": "https://example.org",
+          "Title": "my-lib38.0: a serious vulnerability",
+          "Description": "Some content should be here",
+          "Severity": "MEDIUM"
+        },
+        {
+          "VulnerabilityID": "CVE-0000-0000-39",
+          "PkgName": "my-lib39.0",
+          "InstalledVersion": "39.0.0",
+          "FixedVersion": "39.0.1",
+          "PrimaryURL": "https://example.org",
+          "Title": "my-lib39.0: a serious vulnerability",
+          "Description": "Some content should be here",
+          "Severity": "LOW"
+        },
+        {
+          "VulnerabilityID": "CVE-0000-0000-40",
+          "PkgName": "my-lib40.0",
+          "InstalledVersion": "40.0.0",
+          "FixedVersion": "40.0.1",
+          "PrimaryURL": "https://example.org",
+          "Title": "my-lib40.0: a serious vulnerability",
+          "Description": "Some content should be here",
+          "Severity": "CRITICAL"
+        },
+        {
+          "VulnerabilityID": "CVE-0000-0000-41",
+          "PkgName": "my-lib41.0",
+          "InstalledVersion": "41.0.0",
+          "FixedVersion": "41.0.1",
+          "PrimaryURL": "https://example.org",
+          "Title": "my-lib41.0: a serious vulnerability",
+          "Description": "Some content should be here",
+          "Severity": "HIGH"
+        },
+        {
+          "VulnerabilityID": "CVE-0000-0000-42",
+          "PkgName": "my-lib42.0",
+          "InstalledVersion": "42.0.0",
+          "FixedVersion": "42.0.1",
+          "PrimaryURL": "https://example.org",
+          "Title": "my-lib42.0: a serious vulnerability",
+          "Description": "Some content should be here",
+          "Severity": "MEDIUM"
+        },
+        {
+          "VulnerabilityID": "CVE-0000-0000-43",
+          "PkgName": "my-lib43.0",
+          "InstalledVersion": "43.0.0",
+          "FixedVersion": "43.0.1",
+          "PrimaryURL": "https://example.org",
+          "Title": "my-lib43.0: a serious vulnerability",
+          "Description": "Some content should be here",
+          "Severity": "LOW"
+        },
+        {
+          "VulnerabilityID": "CVE-0000-0000-44",
+          "PkgName": "my-lib44.0",
+          "InstalledVersion": "44.0.0",
+          "FixedVersion": "44.0.1",
+          "PrimaryURL": "https://example.org",
+          "Title": "my-lib44.0: a serious vulnerability",
+          "Description": "Some content should be here",
+          "Severity": "CRITICAL"
+        },
+        {
+          "VulnerabilityID": "CVE-0000-0000-45",
+          "PkgName": "my-lib45.0",
+          "InstalledVersion": "45.0.0",
+          "FixedVersion": "45.0.1",
+          "PrimaryURL": "https://example.org",
+          "Title": "my-lib45.0: a serious vulnerability",
+          "Description": "Some content should be here"
+        },
+        {
+          "VulnerabilityID": "CVE-0000-0000-46",
+          "PkgName": "my-lib46.0",
+          "InstalledVersion": "46.0.0",
+          "FixedVersion": "46.0.1",
+          "PrimaryURL": "https://example.org",
+          "Title": "my-lib46.0: a serious vulnerability",
+          "Description": "Some content should be here",
+          "Severity": "MEDIUM"
+        },
+        {
+          "VulnerabilityID": "CVE-0000-0000-47",
+          "PkgName": "my-lib47.0",
+          "InstalledVersion": "47.0.0",
+          "FixedVersion": "47.0.1",
+          "PrimaryURL": "https://example.org",
+          "Title": "my-lib47.0: a serious vulnerability",
+          "Description": "Some content should be here",
+          "Severity": "LOW"
+        },
+        {
+          "VulnerabilityID": "CVE-0000-0000-48",
+          "PkgName": "my-lib48.0",
+          "InstalledVersion": "48.0.0",
+          "FixedVersion": "48.0.1",
+          "PrimaryURL": "https://example.org",
+          "Title": "my-lib48.0: a serious vulnerability",
+          "Description": "Some content should be here",
+          "Severity": "CRITICAL"
+        },
+        {
+          "VulnerabilityID": "CVE-0000-0000-49",
+          "PkgName": "my-lib49.0",
+          "InstalledVersion": "49.0.0",
+          "FixedVersion": "49.0.1",
+          "PrimaryURL": "https://example.org",
+          "Title": "my-lib49.0: a serious vulnerability",
+          "Description": "Some content should be here",
+          "Severity": "HIGH"
+        },
+        {
+          "VulnerabilityID": "CVE-0000-0000-50",
+          "PkgName": "my-lib50.0",
+          "InstalledVersion": "50.0.0",
+          "FixedVersion": "50.0.1",
+          "PrimaryURL": "https://example.org",
+          "Title": "my-lib50.0: a serious vulnerability",
+          "Description": "Some content should be here",
+          "Severity": "HIGH"
+        },
+        {
+          "VulnerabilityID": "CVE-0000-0000-51",
+          "PkgName": "my-lib51.0",
+          "InstalledVersion": "51.0.0",
+          "FixedVersion": "51.0.1",
+          "PrimaryURL": "https://example.org",
+          "Title": "my-lib51.0: a serious vulnerability",
+          "Description": "Some content should be here",
+          "Severity": "MEDIUM"
+        },
+        {
+          "VulnerabilityID": "CVE-0000-0000-52",
+          "PkgName": "my-lib52.0",
+          "InstalledVersion": "52.0.0",
+          "FixedVersion": "52.0.1",
+          "PrimaryURL": "https://example.org",
+          "Title": "my-lib52.0: a serious vulnerability",
+          "Description": "Some content should be here",
+          "Severity": "LOW"
+        },
+        {
+          "VulnerabilityID": "CVE-0000-0000-53",
+          "PkgName": "my-lib53.0",
+          "InstalledVersion": "53.0.0",
+          "FixedVersion": "53.0.1",
+          "PrimaryURL": "https://example.org",
+          "Title": "my-lib53.0: a serious vulnerability",
+          "Description": "Some content should be here",
+          "Severity": "CRITICAL"
+        }
+      ]
+    }
+  ]
+}
