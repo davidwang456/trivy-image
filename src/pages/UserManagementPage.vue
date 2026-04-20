@@ -1,13 +1,13 @@
 <template>
   <v-container class="py-8">
     <v-card rounded="xl" class="mb-6">
-      <v-card-title class="text-h6">新增用户（仅管理员）</v-card-title>
+      <v-card-title class="text-h6">Add User (Admin Only)</v-card-title>
       <v-card-text>
         <v-row dense>
           <v-col cols="12" md="4">
             <v-text-field
               v-model="newUsername"
-              label="用户名"
+              label="Username"
               prepend-inner-icon="mdi-account"
               variant="solo-filled"
               flat
@@ -17,7 +17,7 @@
           <v-col cols="12" md="4">
             <v-text-field
               v-model="newPassword"
-              label="密码（后端 MD5 存储）"
+              label="Password (Stored as MD5 on backend)"
               prepend-inner-icon="mdi-lock"
               type="password"
               variant="solo-filled"
@@ -29,7 +29,7 @@
             <v-select
               v-model="newRole"
               :items="roles"
-              label="角色"
+              label="Role"
               variant="solo-filled"
               flat
               density="comfortable"
@@ -43,7 +43,7 @@
               :disabled="!canCreate"
               @click="create"
             >
-              添加
+              Add
             </v-btn>
           </v-col>
         </v-row>
@@ -60,7 +60,7 @@
     </v-card>
 
     <v-card rounded="xl" class="mb-6">
-      <v-card-title class="text-h6">管理员重置用户密码</v-card-title>
+      <v-card-title class="text-h6">Admin Reset User Password</v-card-title>
       <v-card-text>
         <v-row dense>
           <v-col cols="12" md="5">
@@ -69,7 +69,7 @@
               :items="users"
               item-title="username"
               item-value="id"
-              label="选择用户"
+              label="Select User"
               variant="solo-filled"
               flat
             />
@@ -77,7 +77,7 @@
           <v-col cols="12" md="5">
             <v-text-field
               v-model="resetNewPassword"
-              label="新密码"
+              label="New Password"
               type="password"
               variant="solo-filled"
               flat
@@ -91,7 +91,7 @@
               :disabled="!canReset"
               @click="resetPasswordByAdmin"
             >
-              重置
+              Reset
             </v-btn>
           </v-col>
         </v-row>
@@ -108,9 +108,15 @@
     </v-card>
 
     <v-card rounded="xl">
-      <v-card-title class="text-h6">用户列表</v-card-title>
+      <v-card-title class="text-h6">User List</v-card-title>
       <v-card-text>
-        <v-alert v-if="loadError" color="error" variant="outlined" density="compact" class="mb-3">
+        <v-alert
+          v-if="loadError"
+          color="error"
+          variant="outlined"
+          density="compact"
+          class="mb-3"
+        >
           {{ loadError }}
         </v-alert>
         <v-data-table
@@ -127,7 +133,12 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue"
-import { adminResetPassword, createUser, listUsers, type UserInfo } from "@/api/auth"
+import {
+  adminResetPassword,
+  createUser,
+  listUsers,
+  type UserInfo,
+} from "@/api/auth"
 
 const users = ref<UserInfo[]>([])
 const loading = ref(false)
@@ -146,10 +157,10 @@ const resetError = ref<string>()
 
 const headers = [
   { title: "ID", key: "id" },
-  { title: "用户名", key: "username" },
-  { title: "角色", key: "role" },
-  { title: "创建时间", key: "createTime" },
-  { title: "更新时间", key: "updateTime" },
+  { title: "Username", key: "username" },
+  { title: "Role", key: "role" },
+  { title: "Created Time", key: "createTime" },
+  { title: "Updated Time", key: "updateTime" },
 ]
 
 const canCreate = computed(

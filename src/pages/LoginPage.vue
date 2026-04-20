@@ -1,11 +1,11 @@
 <template>
   <v-container class="py-12" style="max-width: 520px">
     <v-card rounded="xl" elevation="2">
-      <v-card-title class="text-h5">用户登录</v-card-title>
+      <v-card-title class="text-h5">User Login</v-card-title>
       <v-card-text>
         <v-text-field
           v-model="username"
-          label="用户名"
+          label="Username"
           prepend-inner-icon="mdi-account"
           variant="solo-filled"
           flat
@@ -14,7 +14,7 @@
         />
         <v-text-field
           v-model="password"
-          label="密码"
+          label="Password"
           prepend-inner-icon="mdi-lock"
           type="password"
           variant="solo-filled"
@@ -34,8 +34,13 @@
       </v-card-text>
       <v-card-actions class="px-4 pb-4">
         <v-spacer />
-        <v-btn color="primary" :loading="loading" :disabled="!canSubmit" @click="submit">
-          登录
+        <v-btn
+          color="primary"
+          :loading="loading"
+          :disabled="!canSubmit"
+          @click="submit"
+        >
+          Sign In
         </v-btn>
       </v-card-actions>
     </v-card>

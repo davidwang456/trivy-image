@@ -1,11 +1,16 @@
 <template>
   <v-container class="py-8">
     <v-card rounded="xl" class="mb-6">
-      <v-card-title class="text-h6">新增 Registry Datasource</v-card-title>
+      <v-card-title class="text-h6">Add Registry Datasource</v-card-title>
       <v-card-text>
         <v-row dense>
           <v-col cols="12" md="3">
-            <v-text-field v-model="name" label="Name" variant="solo-filled" flat />
+            <v-text-field
+              v-model="name"
+              label="Name"
+              variant="solo-filled"
+              flat
+            />
           </v-col>
           <v-col cols="12" md="4">
             <v-text-field
@@ -17,7 +22,12 @@
             />
           </v-col>
           <v-col cols="12" md="2">
-            <v-text-field v-model="username" label="Username" variant="solo-filled" flat />
+            <v-text-field
+              v-model="username"
+              label="Username"
+              variant="solo-filled"
+              flat
+            />
           </v-col>
           <v-col cols="12" md="2">
             <v-text-field
@@ -29,7 +39,9 @@
             />
           </v-col>
           <v-col cols="12" md="1" class="d-flex align-center">
-            <v-btn color="primary" block :disabled="!canCreate" @click="create">Add</v-btn>
+            <v-btn color="primary" block :disabled="!canCreate" @click="create"
+              >Add</v-btn
+            >
           </v-col>
         </v-row>
       </v-card-text>
@@ -38,12 +50,24 @@
     <v-card rounded="xl">
       <v-card-title class="text-h6">Datasources</v-card-title>
       <v-card-text>
-        <v-alert v-if="error" color="error" variant="outlined" density="compact" class="mb-3">
+        <v-alert
+          v-if="error"
+          color="error"
+          variant="outlined"
+          density="compact"
+          class="mb-3"
+        >
           {{ error }}
         </v-alert>
         <v-data-table :headers="headers" :items="datasources" item-key="id">
           <template #item.actions="{ item }">
-            <v-btn size="small" color="error" variant="text" @click="remove(item.id)">Delete</v-btn>
+            <v-btn
+              size="small"
+              color="error"
+              variant="text"
+              @click="remove(item.id)"
+              >Delete</v-btn
+            >
           </template>
         </v-data-table>
       </v-card-text>
