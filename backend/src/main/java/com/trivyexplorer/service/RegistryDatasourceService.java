@@ -160,10 +160,13 @@ public class RegistryDatasourceService {
       ds.setPassword(request.getPassword());
       return;
     }
-    if (!StringUtils.hasText(request.getAk()) || !StringUtils.hasText(request.getSk())) {
-      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "ak and sk are required for swr type");
+    if (!StringUtils.hasText(request.getHarborBaseUrl())
+        || !StringUtils.hasText(request.getAk())
+        || !StringUtils.hasText(request.getSk())) {
+      throw new ResponseStatusException(
+          HttpStatus.BAD_REQUEST, "harborBaseUrl, ak and sk are required for swr type");
     }
-    ds.setHarborBaseUrl("swr");
+    ds.setHarborBaseUrl(request.getHarborBaseUrl().trim());
     ds.setUsername(request.getAk().trim());
     ds.setPassword(request.getSk());
   }
