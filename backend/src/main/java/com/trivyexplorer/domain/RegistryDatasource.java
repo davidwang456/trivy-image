@@ -20,6 +20,9 @@ public class RegistryDatasource {
   @Column(nullable = false, unique = true, length = 128)
   private String name;
 
+  @Column(length = 32)
+  private String type;
+
   @Column(nullable = false, length = 512)
   private String harborBaseUrl;
 
@@ -55,6 +58,14 @@ public class RegistryDatasource {
 
   public String getHarborBaseUrl() {
     return harborBaseUrl;
+  }
+
+  public String getType() {
+    return type;
+  }
+
+  public void setType(String type) {
+    this.type = type;
   }
 
   public void setHarborBaseUrl(String harborBaseUrl) {

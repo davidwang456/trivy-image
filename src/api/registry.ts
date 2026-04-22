@@ -1,6 +1,7 @@
 export type RegistryDatasource = {
   id: number
   name: string
+  type?: "harbor" | "swr"
   harborBaseUrl: string
   username: string
   createTime: string
@@ -9,9 +10,12 @@ export type RegistryDatasource = {
 
 export type RegistryDatasourceRequest = {
   name: string
-  harborBaseUrl: string
-  username: string
-  password: string
+  type?: "harbor" | "swr"
+  harborBaseUrl?: string
+  username?: string
+  password?: string
+  ak?: string
+  sk?: string
 }
 
 export type RegistrySchedule = {
@@ -39,7 +43,10 @@ function apiBase(): string {
 
 const withCredentials: RequestInit = { credentials: "include" }
 
-async function readErrorMessage(res: Response, fallback: string): Promise<string> {
+async function readErrorMessage(
+  res: Response,
+  fallback: string,
+): Promise<string> {
   const text = await res.text()
   try {
     const j = JSON.parse(text) as { message?: string; error?: string }
@@ -65,31 +72,46 @@ async function requestVoid(url: string, init?: RequestInit): Promise<void> {
 }
 
 export function listRegistryDatasources() {
-  return requestJson<RegistryDatasource[]>(`${apiBase()}/api/registry-datasources`)
+  return requestJson<RegistryDatasource[]>(
+    `${apiBase()}/api/registry-datasources`,
+  )
 }
 
 export function createRegistryDatasource(body: RegistryDatasourceRequest) {
-  return requestJson<RegistryDatasource>(`${apiBase()}/api/registry-datasources`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  })
+  return requestJson<RegistryDatasource>(
+    `${apiBase()}/api/registry-datasources`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    },
+  )
 }
 
-export function updateRegistryDatasource(id: number, body: RegistryDatasourceRequest) {
-  return requestJson<RegistryDatasource>(`${apiBase()}/api/registry-datasources/${id}`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  })
+export function updateRegistryDatasource(
+  id: number,
+  body: RegistryDatasourceRequest,
+) {
+  return requestJson<RegistryDatasource>(
+    `${apiBase()}/api/registry-datasources/${id}`,
+    {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    },
+  )
 }
 
 export function deleteRegistryDatasource(id: number) {
-  return requestVoid(`${apiBase()}/api/registry-datasources/${id}`, { method: "DELETE" })
+  return requestVoid(`${apiBase()}/api/registry-datasources/${id}`, {
+    method: "DELETE",
+  })
 }
 
 export function listHarborRepos(datasourceId: number) {
-  return requestJson<string[]>(`${apiBase()}/api/registry-datasources/${datasourceId}/repos`)
+  return requestJson<string[]>(
+    `${apiBase()}/api/registry-datasources/${datasourceId}/repos`,
+  )
 }
 
 export function listHarborImages(datasourceId: number, repoName: string) {
@@ -118,5 +140,7 @@ export function createRegistrySchedule(body: {
 }
 
 export function deleteRegistrySchedule(id: number) {
-  return requestVoid(`${apiBase()}/api/registry-schedules/${id}`, { method: "DELETE" })
+  return requestVoid(`${apiBase()}/api/registry-schedules/${id}`, {
+    method: "DELETE",
+  })
 }

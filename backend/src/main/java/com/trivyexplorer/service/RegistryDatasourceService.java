@@ -69,6 +69,9 @@ public class RegistryDatasourceService {
   @Transactional(readOnly = true)
   public List<String> listRepos(Long datasourceId) {
     RegistryDatasource ds = getById(datasourceId);
+    if (!"harbor".equals(resolveType(ds))) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Only harbor datasource supports repo listing");
+    }
     JsonNode root = harborGet(ds, "/api/v2.0/repositories?page_size=100");
     List<String> repos = new ArrayList<>();
     if (root.isArray()) {
@@ -85,6 +88,9 @@ public class RegistryDatasourceService {
   @Transactional(readOnly = true)
   public List<String> listImageRefs(Long datasourceId, String repoName) {
     RegistryDatasource ds = getById(datasourceId);
+    if (!"harbor".equals(resolveType(ds))) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Only harbor datasource supports image listing");
+    }
     if (!StringUtils.hasText(repoName)) {
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "repoName is required");
     }
@@ -139,16 +145,46 @@ public class RegistryDatasourceService {
   }
 
   private void applyRequest(RegistryDatasource ds, RegistryDatasourceRequest request) {
+    String type = normalizeType(request.getType());
     ds.setName(request.getName().trim());
-    ds.setHarborBaseUrl(request.getHarborBaseUrl().trim());
-    ds.setUsername(request.getUsername().trim());
-    ds.setPassword(request.getPassword());
+    ds.setType(type);
+    if ("harbor".equals(type)) {
+      if (!StringUtils.hasText(request.getHarborBaseUrl())
+          || !StringUtils.hasText(request.getUsername())
+          || !StringUtils.hasText(request.getPassword())) {
+        throw new ResponseStatusException(
+            HttpStatus.BAD_REQUEST, "harborBaseUrl, username, password are required for harbor type");
+      }
+      ds.setHarborBaseUrl(request.getHarborBaseUrl().trim());
+      ds.setUsername(request.getUsername().trim());
+      ds.setPassword(request.getPassword());
+      return;
+    }
+    if (!StringUtils.hasText(request.getAk()) || !StringUtils.hasText(request.getSk())) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "ak and sk are required for swr type");
+    }
+    ds.setHarborBaseUrl("swr");
+    ds.setUsername(request.getAk().trim());
+    ds.setPassword(request.getSk());
+  }
+
+  private String normalizeType(String type) {
+    String normalized = StringUtils.hasText(type) ? type.trim().toLowerCase() : "harbor";
+    if (!"harbor".equals(normalized) && !"swr".equals(normalized)) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Unsupported datasource type: " + type);
+    }
+    return normalized;
+  }
+
+  private String resolveType(RegistryDatasource ds) {
+    return StringUtils.hasText(ds.getType()) ? ds.getType().trim().toLowerCase() : "harbor";
   }
 
   private RegistryDatasourceResponse toResponse(RegistryDatasource ds) {
     return new RegistryDatasourceResponse(
         ds.getId(),
         ds.getName(),
+        resolveType(ds),
         ds.getHarborBaseUrl(),
         ds.getUsername(),
         ds.getCreateTime(),
