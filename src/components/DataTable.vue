@@ -11,7 +11,7 @@
   <v-btn
     color="secondary"
     class="mb-4"
-    :disabled="selectedTarget.length !== 1 || downloadingPdf"
+    :disabled="!props.scanId || downloadingPdf"
     :loading="downloadingPdf"
     @click="handleDownloadPdf"
   >
@@ -140,6 +140,7 @@ import { ref, computed } from "vue"
 
 const props = defineProps<{
   selectedVulnerabilities: Vulnerability[]
+  scanId?: number
 }>()
 
 const headers = [
@@ -186,6 +187,14 @@ const targets = computed(() => {
     props.selectedVulnerabilities.map((v) => v.Target),
   )
   return Array.from(uniqueTargets)
+})
+
+const downloadableTarget = computed(() => {
+  if (selectedTarget.value.length === 1) return selectedTarget.value[0]
+  if (selectedTarget.value.length === 0 && targets.value.length === 1) {
+    return targets.value[0]
+  }
+  return ""
 })
 
 const selectedVulnerabilitiesForTarget = computed(() => {
@@ -302,12 +311,11 @@ function getDisplayTitle(
 }
 
 async function handleDownloadPdf() {
-  if (selectedTarget.value.length !== 1) return
+  if (!props.scanId) return
   downloadingPdf.value = true
   try {
-    const target = selectedTarget.value[0]
-    const blob = await downloadTargetPdf(target)
-    const safeName = target.replace(/[^a-zA-Z0-9._-]/g, "_")
+    const blob = await downloadTargetPdf(props.scanId)
+    const safeName = `scan_${props.scanId}`
     const url = URL.createObjectURL(blob)
     const link = document.createElement("a")
     link.href = url

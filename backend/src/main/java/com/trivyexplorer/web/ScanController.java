@@ -53,9 +53,9 @@ public class ScanController {
     return storedScanService.getById(id);
   }
 
-  @GetMapping("/export/pdf")
-  public ResponseEntity<byte[]> exportPdfByTarget(@RequestParam String target) {
-    return storedScanService.exportPdfByTarget(target);
+  @GetMapping("/{id}/export/pdf")
+  public ResponseEntity<byte[]> exportPdfByScanId(@PathVariable Long id) {
+    return storedScanService.exportPdfByScanId(id);
   }
 
   @PostMapping("/import")

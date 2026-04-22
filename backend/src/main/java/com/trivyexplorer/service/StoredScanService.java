@@ -10,7 +10,6 @@ import com.trivyexplorer.web.dto.ScanResponse;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Comparator;
 import java.util.List;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -26,7 +25,6 @@ import org.springframework.web.server.ResponseStatusException;
 public class StoredScanService {
 
   private static final int LIST_MAX = 200;
-  private static final int EXPORT_SEARCH_MAX = 500;
 
   private final ImageScanRepository imageScanRepository;
   private final ObjectMapper objectMapper;
@@ -92,35 +90,20 @@ public class StoredScanService {
   }
 
   @Transactional(readOnly = true)
-  public ResponseEntity<byte[]> exportPdfByTarget(String target) {
-    if (!StringUtils.hasText(target)) {
-      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "target is required");
-    }
-    String normalizedTarget = target.trim();
+  public ResponseEntity<byte[]> exportPdfByScanId(Long scanId) {
+    ImageScan latestScan =
+        imageScanRepository
+            .findById(scanId)
+            .orElseThrow(
+                () ->
+                    new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "Scan not found: " + scanId));
 
-    Pageable pageable = PageRequest.of(0, EXPORT_SEARCH_MAX);
-    List<ImageScan> scans =
-        imageScanRepository.findAll(pageable).stream()
-            .sorted(Comparator.comparing(ImageScan::getCreateTime).reversed())
-            .toList();
-
-    JsonNode matchedReport = null;
-    for (ImageScan scan : scans) {
-      try {
-        JsonNode report = objectMapper.readTree(scan.getReportJson());
-        JsonNode filtered = filterReportByTarget(report, normalizedTarget);
-        if (filtered != null) {
-          matchedReport = filtered;
-          break;
-        }
-      } catch (IOException e) {
-        // Ignore invalid record and continue scanning newer history.
-      }
-    }
-
-    if (matchedReport == null) {
-      throw new ResponseStatusException(
-          HttpStatus.NOT_FOUND, "No stored report found for target: " + normalizedTarget);
+    JsonNode matchedReport;
+    try {
+      matchedReport = objectMapper.readTree(latestScan.getReportJson());
+    } catch (IOException e) {
+      throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Stored report JSON is invalid");
     }
 
     Path inputJson = null;
@@ -149,7 +132,8 @@ public class StoredScanService {
       }
 
       byte[] bytes = Files.readAllBytes(outputPdf);
-      String safeName = normalizedTarget.replaceAll("[^a-zA-Z0-9._-]", "_");
+      String fileBase = latestScan.getImageRef();
+      String safeName = fileBase.replaceAll("[^a-zA-Z0-9._-]", "_");
       return ResponseEntity.ok()
           .contentType(MediaType.APPLICATION_PDF)
           .header("Content-Disposition", "attachment; filename=\"" + safeName + ".pdf\"")
@@ -175,40 +159,6 @@ public class StoredScanService {
         }
       }
     }
-  }
-
-  private JsonNode filterReportByTarget(JsonNode report, String target) {
-    if (report == null || report.isNull()) return null;
-
-    if (report.has("Results") && report.get("Results").isArray()) {
-      JsonNode results = report.get("Results");
-      var filtered = objectMapper.createArrayNode();
-      for (JsonNode item : results) {
-        if (target.equals(textValue(item.get("Target")))) {
-          filtered.add(item);
-        }
-      }
-      if (!filtered.isEmpty()) {
-        var cloned = report.deepCopy();
-        if (cloned.isObject()) {
-          ((com.fasterxml.jackson.databind.node.ObjectNode) cloned).set("Results", filtered);
-          return cloned;
-        }
-      }
-      return null;
-    }
-
-    if (report.isArray()) {
-      var filtered = objectMapper.createArrayNode();
-      for (JsonNode item : report) {
-        if (target.equals(textValue(item.get("Target")))) {
-          filtered.add(item);
-        }
-      }
-      return filtered.isEmpty() ? null : filtered;
-    }
-
-    return target.equals(textValue(report.get("Target"))) ? report : null;
   }
 
   private String resolveImageRef(String requestedImageRef, JsonNode report) {

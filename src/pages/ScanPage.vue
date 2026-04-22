@@ -11,8 +11,8 @@
           >
             <h2 class="headline">Scan an image</h2>
             <p class="mb-6 text-medium-emphasis">
-              Select a registry datasource first, then enter image reference
-              for scan. Admin can also browse Harbor repos and batch scan.
+              Select a registry datasource first, then enter image reference for
+              scan. Admin can also browse Harbor repos and batch scan.
             </p>
 
             <v-row dense>
@@ -108,7 +108,9 @@
                 <v-col cols="12">
                   <v-btn
                     color="warning"
-                    :disabled="!selectedDatasourceId || selectedImages.length === 0"
+                    :disabled="
+                      !selectedDatasourceId || selectedImages.length === 0
+                    "
                     :loading="scanningBatch"
                     @click="runBatchScan(next)"
                   >
@@ -197,6 +199,7 @@
             <DataTable
               v-if="reportLoaded"
               :selectedVulnerabilities="selectedVulnerabilities"
+              :scanId="selectedScanId"
             />
             <v-row v-else class="my-2"
               ><v-col>
@@ -252,6 +255,7 @@ const scheduleRepo = ref("")
 const scheduleImage = ref("")
 
 const selectedVulnerabilities = ref<Vulnerability[]>([])
+const selectedScanId = ref<number>()
 const reportLoaded = ref(false)
 const datasourceItems = computed(() =>
   datasources.value.map((d) => ({ title: d.name, value: d.id })),
@@ -304,6 +308,7 @@ async function runScan(nextStep: () => void) {
 
     flat.forEach((item: Vulnerability, index: number) => (item.id = index))
     selectedVulnerabilities.value.push(...flat)
+    selectedScanId.value = res.id
     reportLoaded.value = true
     nextStep()
   } catch (e: unknown) {
@@ -362,6 +367,7 @@ async function runBatchScan(nextStep: () => void) {
     flat.forEach((item: Vulnerability, index: number) => (item.id = index))
     selectedVulnerabilities.value.splice(0)
     selectedVulnerabilities.value.push(...flat)
+    selectedScanId.value = last.id
     reportLoaded.value = true
     nextStep()
   } catch (e: unknown) {

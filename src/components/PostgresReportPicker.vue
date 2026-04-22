@@ -45,7 +45,7 @@ import type { Vulnerability } from "@/types"
 import { extractTargetsFromReport } from "@/utils/trivyReport"
 
 const emit = defineEmits<{
-  reportLoaded: [vulnerabilities: Vulnerability[]]
+  reportLoaded: [payload: { vulnerabilities: Vulnerability[]; scanId: number }]
 }>()
 
 const selectedId = ref<number | undefined>()
@@ -53,11 +53,7 @@ const items = ref<{ title: string; value: number }[]>([])
 const loading = ref(false)
 const localError = ref<string>()
 
-function formatItem(s: {
-  id: number
-  imageRef: string
-  createTime: string
-}) {
+function formatItem(s: { id: number; imageRef: string; createTime: string }) {
   const d = new Date(s.createTime)
   const ds = Number.isNaN(d.getTime()) ? s.createTime : d.toLocaleString()
   return {
@@ -124,7 +120,7 @@ async function onSelect(id: number | null | undefined) {
       ).values(),
     )
 
-    emit("reportLoaded", unique)
+    emit("reportLoaded", { vulnerabilities: unique, scanId: id })
   } catch (e) {
     localError.value = e instanceof Error ? e.message : String(e)
   } finally {

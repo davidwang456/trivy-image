@@ -79,7 +79,9 @@ enum ReportSource {
 }
 
 const props = defineProps<{ presetUrl?: string }>()
-const emit = defineEmits(["inputChanged"])
+const emit = defineEmits<{
+  inputChanged: [payload: { vulnerabilities: Vulnerability[]; scanId?: number }]
+}>()
 
 const reportSource = ref(ReportSource.File)
 const vulnerabilityReport = ref<VulnerabilityReportTarget[]>([])
@@ -106,7 +108,13 @@ onMounted(() => {
 
 const selectedVulnerabilities = computed(() => {
   return vulnerabilityReport.value
-    .filter((vr) => vr.Vulnerabilities)
+    .filter(
+      (
+        vr,
+      ): vr is VulnerabilityReportTarget & {
+        Vulnerabilities: Vulnerability[]
+      } => Array.isArray(vr.Vulnerabilities),
+    )
     .flatMap((vr) => vr.Vulnerabilities)
 })
 
@@ -120,14 +128,19 @@ const parseFileAndImport = async (
     typeof fileEvent.target.result === "string"
   ) {
     try {
-      const parsedReport = JSON.parse(fileEvent.target.result) as Version1OrVersion2
+      const parsedReport = JSON.parse(
+        fileEvent.target.result,
+      ) as Version1OrVersion2
       const { targets, error } = extractTargetsFromReport(parsedReport)
       reportError.value = error
       if (error) {
         return
       }
-      await storeReportInPostgres(parsedReport, imageRefFromFileName)
-      handleNewReport(targets)
+      const scanId = await storeReportInPostgres(
+        parsedReport,
+        imageRefFromFileName,
+      )
+      handleNewReport(targets, scanId)
     } catch (e: unknown) {
       reportError.value = {
         title: "Invalid JSON file",
@@ -154,21 +167,30 @@ const onNewReport = async (report: Version1OrVersion2) => {
   if (error) {
     return
   }
-  await storeReportInPostgres(report)
-  handleNewReport(targets)
+  const scanId = await storeReportInPostgres(report)
+  handleNewReport(targets, scanId)
 }
 
-const handleNewReport = (vulnerabilityTargets: VulnerabilityReportTarget[]) => {
+const handleNewReport = (
+  vulnerabilityTargets: VulnerabilityReportTarget[],
+  scanId?: number,
+) => {
   if (vulnerabilityTargets.length > 0) {
     vulnerabilityReport.value.splice(0)
     vulnerabilityReport.value.push(...vulnerabilityTargets)
-    emit("inputChanged", selectedVulnerabilities.value)
+    emit("inputChanged", {
+      vulnerabilities: selectedVulnerabilities.value,
+      scanId,
+    })
   }
 }
 
-const onReportFromPostgres = (vulns: Vulnerability[]) => {
+const onReportFromPostgres = (payload: {
+  vulnerabilities: Vulnerability[]
+  scanId: number
+}) => {
   reportError.value = undefined
-  emit("inputChanged", vulns)
+  emit("inputChanged", payload)
 }
 
 const storeReportInPostgres = async (
@@ -178,9 +200,9 @@ const storeReportInPostgres = async (
   try {
     const { targets } = extractTargetsFromReport(report)
     const imageRef =
-      imageRefOverride?.trim() ||
-      targets.find((t) => !!t.Target)?.Target
-    await importScanReport({ report, imageRef })
+      imageRefOverride?.trim() || targets.find((t) => !!t.Target)?.Target
+    const saved = await importScanReport({ report, imageRef })
+    return saved.id
   } catch (e: unknown) {
     reportError.value = {
       title: "Save to PostgreSQL failed",
@@ -189,5 +211,4 @@ const storeReportInPostgres = async (
     throw e
   }
 }
-
 </script>

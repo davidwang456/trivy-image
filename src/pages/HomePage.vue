@@ -36,6 +36,7 @@
             <DataTable
               v-if="reportLoaded"
               :selectedVulnerabilities="selectedVulnerabilities"
+              :scanId="selectedScanId"
             ></DataTable>
             <v-row v-else class="my-2"
               ><v-col>
@@ -63,6 +64,7 @@ import {
 } from "vuetify/labs/VStepperVertical"
 
 const selectedVulnerabilities = ref<Vulnerability[]>([])
+const selectedScanId = ref<number>()
 const reportLoaded = ref(false)
 const query = useRoute().query
 const presetUrl = (Array.isArray(query.url) ? query.url[0] : query.url) as
@@ -70,14 +72,15 @@ const presetUrl = (Array.isArray(query.url) ? query.url[0] : query.url) as
   | undefined
 
 function reactivelySetNewVulnerabilities(
-  newVulnerabilities: Vulnerability[],
+  payload: { vulnerabilities: Vulnerability[]; scanId?: number },
   nextStep: () => void,
 ) {
   selectedVulnerabilities.value.splice(0)
-  newVulnerabilities.forEach(
+  payload.vulnerabilities.forEach(
     (item: Vulnerability, index: number) => (item.id = index),
   )
-  selectedVulnerabilities.value.push(...newVulnerabilities)
+  selectedVulnerabilities.value.push(...payload.vulnerabilities)
+  selectedScanId.value = payload.scanId
   reportLoaded.value = true
   nextStep()
 }

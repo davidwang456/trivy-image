@@ -161,10 +161,9 @@ export async function importScanReport(
   }
 }
 
-export async function downloadTargetPdf(target: string): Promise<Blob> {
+export async function downloadTargetPdf(scanId: number): Promise<Blob> {
   try {
-    const q = new URLSearchParams({ target: target.trim() }).toString()
-    const url = `${apiBase()}/api/scans/export/pdf?${q}`
+    const url = `${apiBase()}/api/scans/${scanId}/export/pdf`
     const res = await fetch(url, withCredentials)
     if (!res.ok) {
       throw new Error(await readErrorMessage(res, `HTTP ${res.status}`))
