@@ -8,6 +8,15 @@
     class="mb-5"
     multiple
   />
+  <v-btn
+    color="secondary"
+    class="mb-4"
+    :disabled="selectedTarget.length !== 1 || downloadingPdf"
+    :loading="downloadingPdf"
+    @click="handleDownloadPdf"
+  >
+    Download Target PDF
+  </v-btn>
 
   <v-container>
     <v-row class="align-center">
@@ -121,6 +130,7 @@
 </template>
 
 <script setup lang="ts">
+import { downloadTargetPdf } from "@/api/scan"
 import {
   orderedSeverityLevels,
   type Severity,
@@ -169,6 +179,7 @@ const search = ref("")
 const severity = ref<Severity[]>([])
 const fixable = ref<boolean>()
 const selectedTarget = ref<string[]>([])
+const downloadingPdf = ref(false)
 
 const targets = computed(() => {
   const uniqueTargets = new Set(
@@ -288,5 +299,25 @@ function getDisplayTitle(
       ? description.slice(0, 100) + "..."
       : description
   return undefined
+}
+
+async function handleDownloadPdf() {
+  if (selectedTarget.value.length !== 1) return
+  downloadingPdf.value = true
+  try {
+    const target = selectedTarget.value[0]
+    const blob = await downloadTargetPdf(target)
+    const safeName = target.replace(/[^a-zA-Z0-9._-]/g, "_")
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement("a")
+    link.href = url
+    link.download = `${safeName}.pdf`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+  } finally {
+    downloadingPdf.value = false
+  }
 }
 </script>

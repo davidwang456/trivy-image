@@ -54,7 +54,10 @@ function withApiBaseHint(error: unknown): Error {
 
 const withCredentials: RequestInit = { credentials: "include" }
 
-async function readErrorMessage(res: Response, fallback: string): Promise<string> {
+async function readErrorMessage(
+  res: Response,
+  fallback: string,
+): Promise<string> {
   const text = await res.text()
   let message = text || res.statusText
   try {
@@ -153,6 +156,20 @@ export async function importScanReport(
       throw new Error(await readErrorMessage(res, `HTTP ${res.status}`))
     }
     return res.json() as Promise<ScanResponseBody>
+  } catch (error: unknown) {
+    throw withApiBaseHint(error)
+  }
+}
+
+export async function downloadTargetPdf(target: string): Promise<Blob> {
+  try {
+    const q = new URLSearchParams({ target: target.trim() }).toString()
+    const url = `${apiBase()}/api/scans/export/pdf?${q}`
+    const res = await fetch(url, withCredentials)
+    if (!res.ok) {
+      throw new Error(await readErrorMessage(res, `HTTP ${res.status}`))
+    }
+    return await res.blob()
   } catch (error: unknown) {
     throw withApiBaseHint(error)
   }
