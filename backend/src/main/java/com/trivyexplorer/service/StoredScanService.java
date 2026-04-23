@@ -6,11 +6,19 @@ import com.trivyexplorer.domain.ImageScan;
 import com.trivyexplorer.repo.ImageScanRepository;
 import com.trivyexplorer.web.dto.ImportScanRequest;
 import com.trivyexplorer.web.dto.ImageScanSummary;
+import com.trivyexplorer.web.dto.ScanDashboardNode;
 import com.trivyexplorer.web.dto.ScanResponse;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -45,20 +53,47 @@ public class StoredScanService {
   }
 
   @Transactional
-  public ScanResponse importAndStore(ImportScanRequest request) {
+  public ScanResponse importAndStore(ImportScanRequest request, String operator) {
     JsonNode report = request.getReport();
     try {
       byte[] jsonBytes = objectMapper.writeValueAsBytes(report);
       String imageRef = resolveImageRef(request.getImageRef(), report);
+      TrivyScanService.ImageHierarchy hierarchy = TrivyScanService.resolveHierarchy(imageRef);
 
-      ImageScan entity = new ImageScan();
-      entity.setImageRef(imageRef);
-      entity.setReportJson(jsonBytes);
+      Optional<ImageScan> existing = imageScanRepository.findByImageRef(imageRef);
+      ImageScan entity;
+      if (existing.isPresent()) {
+        entity = existing.get();
+        //entity.setSystemName(hierarchy.systemName());
+        //entity.setProjectName(hierarchy.projectName());
+        entity.setJobName(entity.getSystemName() + "/" + entity.getProjectName());
+        entity.setJobType(TrivyScanService.JOB_TYPE_MANUAL);
+        entity.setUpdateBy(operator);
+        entity.setReportJson(jsonBytes);
+      } else {
+        entity = new ImageScan();
+        entity.setImageRef(imageRef);
+        entity.setJobId(UUID.randomUUID().toString());
+        entity.setSystemName(hierarchy.systemName());
+        entity.setProjectName(hierarchy.projectName());
+        entity.setJobName(entity.getSystemName() + "/" + entity.getProjectName());
+        entity.setJobType(TrivyScanService.JOB_TYPE_MANUAL);
+        entity.setCreateBy(operator);
+        entity.setUpdateBy(operator);
+        entity.setReportJson(jsonBytes);
+      }
       ImageScan saved = imageScanRepository.save(entity);
 
       return new ScanResponse(
           saved.getId(),
           saved.getImageRef(),
+          saved.getJobId(),
+          saved.getJobName(),
+          saved.getSystemName(),
+          saved.getProjectName(),
+          saved.getJobType(),
+          saved.getCreateBy(),
+          saved.getUpdateBy(),
           report,
           saved.getCreateTime(),
           saved.getUpdateTime());
@@ -81,6 +116,13 @@ public class StoredScanService {
       return new ScanResponse(
           entity.getId(),
           entity.getImageRef(),
+          entity.getJobId(),
+          entity.getJobName(),
+          entity.getSystemName(),
+          entity.getProjectName(),
+          entity.getJobType(),
+          entity.getCreateBy(),
+          entity.getUpdateBy(),
           root,
           entity.getCreateTime(),
           entity.getUpdateTime());
@@ -161,6 +203,76 @@ public class StoredScanService {
     }
   }
 
+  @Transactional(readOnly = true)
+  public List<ScanDashboardNode> dashboard() {
+    List<ImageScan> scans = imageScanRepository.findAllByOrderByCreateTimeDesc();
+    Map<String, JobAcc> jobs = new LinkedHashMap<>();
+    for (ImageScan scan : scans) {
+      JobAcc job =
+          jobs.computeIfAbsent(
+              scan.getJobId(),
+              jobId ->
+                  new JobAcc(
+                      scan.getJobId(),
+                      scan.getJobName(),
+                      scan.getCreateTime(),
+                      scan.getUpdateTime(),
+                      new LinkedHashMap<>()));
+      if (scan.getCreateTime() != null
+          && (job.createTime == null || scan.getCreateTime().isBefore(job.createTime))) {
+        job.createTime = scan.getCreateTime();
+      }
+      if (scan.getUpdateTime() != null
+          && (job.updateTime == null || scan.getUpdateTime().isAfter(job.updateTime))) {
+        job.updateTime = scan.getUpdateTime();
+      }
+
+      SystemAcc system =
+          job.systems.computeIfAbsent(scan.getSystemName(), key -> new SystemAcc(new LinkedHashMap<>()));
+      List<ScanDashboardNode.ImageNode> images =
+          system.projects.computeIfAbsent(scan.getProjectName(), key -> new ArrayList<>());
+      images.add(
+          new ScanDashboardNode.ImageNode(
+              scan.getId(),
+              scan.getImageRef(),
+              scan.getCreateTime(),
+              scan.getUpdateTime(),
+              scan.getJobId(),
+              scan.getJobName()));
+    }
+
+    return jobs.values().stream()
+        .map(
+            job ->
+                new ScanDashboardNode(
+                    job.jobId,
+                    job.jobName,
+                    job.systems.entrySet().stream()
+                        .map(
+                            system ->
+                                new ScanDashboardNode.SystemNode(
+                                    system.getKey(),
+                                    system.getValue().projects.entrySet().stream()
+                                        .map(
+                                            project ->
+                                                new ScanDashboardNode.ProjectNode(
+                                                    project.getKey(),
+                                                    project.getValue().stream()
+                                                        .sorted(
+                                                            Comparator.comparing(
+                                                                    ScanDashboardNode.ImageNode::createTime,
+                                                                    Comparator.nullsLast(
+                                                                        Comparator.reverseOrder()))
+                                                                .thenComparing(
+                                                                    ScanDashboardNode.ImageNode::id))
+                                                        .toList()))
+                                        .toList()))
+                        .toList(),
+                    job.createTime,
+                    job.updateTime))
+        .toList();
+  }
+
   private String resolveImageRef(String requestedImageRef, JsonNode report) {
     if (StringUtils.hasText(requestedImageRef)) {
       return requestedImageRef.trim();
@@ -204,5 +316,34 @@ public class StoredScanService {
     }
     String value = node.asText();
     return StringUtils.hasText(value) ? value.trim() : null;
+  }
+
+  private static final class JobAcc {
+    private final String jobId;
+    private final String jobName;
+    private Instant createTime;
+    private Instant updateTime;
+    private final Map<String, SystemAcc> systems;
+
+    private JobAcc(
+        String jobId,
+        String jobName,
+        Instant createTime,
+        Instant updateTime,
+        Map<String, SystemAcc> systems) {
+      this.jobId = jobId;
+      this.jobName = jobName;
+      this.createTime = createTime;
+      this.updateTime = updateTime;
+      this.systems = systems;
+    }
+  }
+
+  private static final class SystemAcc {
+    private final Map<String, List<ScanDashboardNode.ImageNode>> projects;
+
+    private SystemAcc(Map<String, List<ScanDashboardNode.ImageNode>> projects) {
+      this.projects = projects;
+    }
   }
 }

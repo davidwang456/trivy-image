@@ -8,6 +8,7 @@ import com.trivyexplorer.service.UserService;
 import com.trivyexplorer.web.dto.BatchScanRequest;
 import com.trivyexplorer.web.dto.ImportScanRequest;
 import com.trivyexplorer.web.dto.ImageScanSummary;
+import com.trivyexplorer.web.dto.ScanDashboardNode;
 import com.trivyexplorer.web.dto.ScanRequest;
 import com.trivyexplorer.web.dto.ScanResponse;
 import jakarta.servlet.http.HttpSession;
@@ -53,22 +54,32 @@ public class ScanController {
     return storedScanService.getById(id);
   }
 
+  @GetMapping("/dashboard")
+  public List<ScanDashboardNode> dashboard() {
+    return storedScanService.dashboard();
+  }
+
   @GetMapping("/{id}/export/pdf")
   public ResponseEntity<byte[]> exportPdfByScanId(@PathVariable Long id) {
     return storedScanService.exportPdfByScanId(id);
   }
 
   @PostMapping("/import")
-  public ResponseEntity<ScanResponse> importReport(@Valid @RequestBody ImportScanRequest request) {
-    return ResponseEntity.ok(storedScanService.importAndStore(request));
+  public ResponseEntity<ScanResponse> importReport(
+      @Valid @RequestBody ImportScanRequest request, HttpSession session) {
+    String operator = requireAuthenticatedUsername(session);
+    return ResponseEntity.ok(storedScanService.importAndStore(request, operator));
   }
 
   @PostMapping
-  public ResponseEntity<ScanResponse> scan(@Valid @RequestBody ScanRequest request)
+  public ResponseEntity<ScanResponse> scan(
+      @Valid @RequestBody ScanRequest request, HttpSession session)
       throws IOException, InterruptedException {
+    String operator = requireAuthenticatedUsername(session);
     RegistryDatasource ds = registryDatasourceService.getById(request.getDatasourceId());
     return ResponseEntity.ok(
-        trivyScanService.scanAndStore(request.getImageRef(), ds.getUsername(), ds.getPassword()));
+        trivyScanService.scanAndStore(
+            request.getImageRef(), ds.getUsername(), ds.getPassword(), operator));
   }
 
   @PostMapping("/batch")
@@ -76,10 +87,19 @@ public class ScanController {
       @Valid @RequestBody BatchScanRequest request, HttpSession session)
       throws IOException, InterruptedException {
     requireAdmin(session);
+    String operator = requireAuthenticatedUsername(session);
     RegistryDatasource ds = registryDatasourceService.getById(request.getDatasourceId());
     List<ScanResponse> result = new ArrayList<>();
+    TrivyScanService.ScanMetadata metadata = trivyScanService.buildBatchMetadata(request.getImageRefs());
     for (String imageRef : request.getImageRefs()) {
-      result.add(trivyScanService.scanAndStore(imageRef, ds.getUsername(), ds.getPassword()));
+      result.add(
+          trivyScanService.scanAndStore(
+              imageRef,
+              ds.getUsername(),
+              ds.getPassword(),
+              metadata,
+              operator,
+              TrivyScanService.JOB_TYPE_MANUAL));
     }
     return ResponseEntity.ok(result);
   }
@@ -89,5 +109,13 @@ public class ScanController {
     if (!(role instanceof String) || !UserService.ROLE_ADMIN.equals(role)) {
       throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Admin role required");
     }
+  }
+
+  private static String requireAuthenticatedUsername(HttpSession session) {
+    Object username = session.getAttribute(AuthController.SESSION_USERNAME);
+    if (!(username instanceof String s) || s.isBlank()) {
+      throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Not authenticated");
+    }
+    return s.trim();
   }
 }

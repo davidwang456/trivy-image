@@ -1,4 +1,5 @@
 import ChangePasswordPage from "@/pages/ChangePasswordPage.vue"
+import DashboardPage from "@/pages/DashboardPage.vue"
 import HomePage from "@/pages/HomePage.vue"
 import LoginPage from "@/pages/LoginPage.vue"
 import RegistryDatasourcePage from "@/pages/RegistryDatasourcePage.vue"
@@ -36,6 +37,12 @@ const router = createRouter({
       meta: { i18nKey: "scan", requiresAuth: true },
     },
     {
+      path: "/dashboard",
+      name: "dashboard",
+      component: DashboardPage,
+      meta: { i18nKey: "dashboard", requiresAuth: true },
+    },
+    {
       path: "/login",
       name: "login",
       component: LoginPage,
@@ -51,7 +58,11 @@ const router = createRouter({
       path: "/registry-datasources",
       name: "registry-datasources",
       component: RegistryDatasourcePage,
-      meta: { i18nKey: "registry-datasources", requiresAuth: true, adminOnly: true },
+      meta: {
+        i18nKey: "registry-datasources",
+        requiresAuth: true,
+        adminOnly: true,
+      },
     },
     {
       path: "/change-password",

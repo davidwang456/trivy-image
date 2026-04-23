@@ -8,6 +8,13 @@ export type ScanRequestBody = {
 export type ScanResponseBody = {
   id: number
   imageRef: string
+  jobId: string
+  jobName: string
+  systemName: string
+  projectName: string
+  jobType: "manual" | "cron"
+  createBy?: string
+  updateBy?: string
   report: Version1OrVersion2
   createTime: string
   updateTime: string
@@ -16,6 +23,40 @@ export type ScanResponseBody = {
 export type ScanSummary = {
   id: number
   imageRef: string
+  jobId: string
+  jobName: string
+  systemName: string
+  projectName: string
+  jobType: "manual" | "cron"
+  createBy?: string
+  updateBy?: string
+  createTime: string
+  updateTime: string
+}
+
+export type ScanDashboardImage = {
+  id: number
+  imageRef: string
+  createTime: string
+  updateTime: string
+  jobId: string
+  jobName: string
+}
+
+export type ScanDashboardProject = {
+  projectName: string
+  images: ScanDashboardImage[]
+}
+
+export type ScanDashboardSystem = {
+  systemName: string
+  projects: ScanDashboardProject[]
+}
+
+export type ScanDashboardJob = {
+  jobId: string
+  jobName: string
+  systems: ScanDashboardSystem[]
   createTime: string
   updateTime: string
 }
@@ -136,6 +177,19 @@ export async function getScanById(id: number): Promise<ScanResponseBody> {
       throw new Error(await readErrorMessage(res, `HTTP ${res.status}`))
     }
     return res.json() as Promise<ScanResponseBody>
+  } catch (error: unknown) {
+    throw withApiBaseHint(error)
+  }
+}
+
+export async function getScanDashboard(): Promise<ScanDashboardJob[]> {
+  try {
+    const url = `${apiBase()}/api/scans/dashboard`
+    const res = await fetch(url, withCredentials)
+    if (!res.ok) {
+      throw new Error(await readErrorMessage(res, `HTTP ${res.status}`))
+    }
+    return res.json() as Promise<ScanDashboardJob[]>
   } catch (error: unknown) {
     throw withApiBaseHint(error)
   }

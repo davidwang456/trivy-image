@@ -11,6 +11,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -24,6 +26,8 @@ import org.springframework.util.StringUtils;
  */
 @Service
 public class TrivyScanService {
+  public static final String JOB_TYPE_MANUAL = "manual";
+  public static final String JOB_TYPE_CRON = "cron";
 
   private final ImageScanRepository imageScanRepository;
   private final ObjectMapper objectMapper;
@@ -42,7 +46,46 @@ public class TrivyScanService {
   }
 
   @Transactional
-  public ScanResponse scanAndStore(String imageRef, String registryUsername, String registryPassword)
+  public ScanResponse scanAndStore(
+      String imageRef, String registryUsername, String registryPassword, String operator)
+      throws IOException, InterruptedException {
+    ImageHierarchy hierarchy = resolveHierarchy(imageRef);
+    ScanMetadata metadata =
+        new ScanMetadata(
+            UUID.randomUUID().toString(),
+            buildJobName(hierarchy.systemName(), hierarchy.projectName()),
+            hierarchy.systemName(),
+            hierarchy.projectName());
+    return scanAndStore(
+        imageRef, registryUsername, registryPassword, metadata, operator, JOB_TYPE_MANUAL);
+  }
+
+  @Transactional
+  public ScanResponse scanAndStore(
+      String imageRef,
+      String registryUsername,
+      String registryPassword,
+      String operator,
+      String jobType)
+      throws IOException, InterruptedException {
+    ImageHierarchy hierarchy = resolveHierarchy(imageRef);
+    ScanMetadata metadata =
+        new ScanMetadata(
+            UUID.randomUUID().toString(),
+            buildJobName(hierarchy.systemName(), hierarchy.projectName()),
+            hierarchy.systemName(),
+            hierarchy.projectName());
+    return scanAndStore(imageRef, registryUsername, registryPassword, metadata, operator, jobType);
+  }
+
+  @Transactional
+  public ScanResponse scanAndStore(
+      String imageRef,
+      String registryUsername,
+      String registryPassword,
+      ScanMetadata metadata,
+      String operator,
+      String jobType)
       throws IOException, InterruptedException {
     Path output = Files.createTempFile("trivy-report-", ".json");
     try {
@@ -87,14 +130,42 @@ public class TrivyScanService {
       byte[] jsonBytes = Files.readAllBytes(output);
       JsonNode root = objectMapper.readTree(jsonBytes);
 
-      ImageScan entity = new ImageScan();
-      entity.setImageRef(imageRef.trim());
-      entity.setReportJson(jsonBytes);
+      String ref = imageRef.trim();
+      Optional<ImageScan> existing = imageScanRepository.findByImageRef(ref);
+      ImageScan entity;
+      if (existing.isPresent()) {
+        entity = existing.get();
+        entity.setJobId(metadata.jobId());
+        entity.setJobName(metadata.jobName());
+        entity.setSystemName(metadata.systemName());
+        entity.setProjectName(metadata.projectName());
+        entity.setJobType(normalizeJobType(jobType));
+        entity.setUpdateBy(operator);
+        entity.setReportJson(jsonBytes);
+      } else {
+        entity = new ImageScan();
+        entity.setImageRef(ref);
+        entity.setJobId(metadata.jobId());
+        entity.setJobName(metadata.jobName());
+        entity.setSystemName(metadata.systemName());
+        entity.setProjectName(metadata.projectName());
+        entity.setJobType(normalizeJobType(jobType));
+        entity.setCreateBy(operator);
+        entity.setUpdateBy(operator);
+        entity.setReportJson(jsonBytes);
+      }
       ImageScan saved = imageScanRepository.save(entity);
 
       return new ScanResponse(
           saved.getId(),
           saved.getImageRef(),
+          saved.getJobId(),
+          saved.getJobName(),
+          saved.getSystemName(),
+          saved.getProjectName(),
+          saved.getJobType(),
+          saved.getCreateBy(),
+          saved.getUpdateBy(),
           root,
           saved.getCreateTime(),
           saved.getUpdateTime());
@@ -109,4 +180,62 @@ public class TrivyScanService {
     }
     return s.substring(0, maxLen) + "...";
   }
+
+  public ScanMetadata buildBatchMetadata(List<String> imageRefs) {
+    ImageHierarchy hierarchy =
+        imageRefs.stream()
+            .findFirst()
+            .map(TrivyScanService::resolveHierarchy)
+            .orElse(new ImageHierarchy("default-system", "default-project"));
+    return new ScanMetadata(
+        UUID.randomUUID().toString(),
+        buildJobName(hierarchy.systemName(), hierarchy.projectName()),
+        hierarchy.systemName(),
+        hierarchy.projectName());
+  }
+
+  private static String buildJobName(String systemName, String projectName) {
+    return systemName + "/" + projectName;
+  }
+
+  private static String normalizeJobType(String jobType) {
+    if (JOB_TYPE_CRON.equalsIgnoreCase(jobType)) {
+      return JOB_TYPE_CRON;
+    }
+    return JOB_TYPE_MANUAL;
+  }
+
+  public static ImageHierarchy resolveHierarchy(String imageRef) {
+    if (!StringUtils.hasText(imageRef)) {
+      return new ImageHierarchy("default-system", "default-project");
+    }
+    String normalized = imageRef.trim();
+    int atIndex = normalized.indexOf('@');
+    if (atIndex > 0) {
+      normalized = normalized.substring(0, atIndex);
+    }
+    int colonIndex = normalized.lastIndexOf(':');
+    int slashIndex = normalized.lastIndexOf('/');
+    if (colonIndex > slashIndex) {
+      normalized = normalized.substring(0, colonIndex);
+    }
+    String[] parts = normalized.split("/");
+    if (parts.length == 0) {
+      return new ImageHierarchy("default-system", "default-project");
+    }
+
+    boolean hasRegistryHost = parts[0].contains(".") || parts[0].contains(":");
+    if (hasRegistryHost) {
+      String systemName = parts.length >= 2 ? parts[1] : "default-system";
+      String projectName = parts.length >= 3 ? parts[2] : "default-project";
+      return new ImageHierarchy(systemName, projectName);
+    }
+    String systemName = parts.length >= 1 ? parts[0] : "default-system";
+    String projectName = parts.length >= 2 ? parts[1] : "default-project";
+    return new ImageHierarchy(systemName, projectName);
+  }
+
+  public record ScanMetadata(String jobId, String jobName, String systemName, String projectName) {}
+
+  public record ImageHierarchy(String systemName, String projectName) {}
 }

@@ -31,6 +31,13 @@
           @click="goTo('scan')"
         />
         <v-list-item
+          v-if="isAuthenticated"
+          :active="route.name === 'dashboard'"
+          prepend-icon="mdi-view-dashboard"
+          title="Dashboard"
+          @click="goTo('dashboard')"
+        />
+        <v-list-item
           v-if="isAuthenticated && isAdmin"
           :active="route.name === 'registry-datasources'"
           prepend-icon="mdi-database-cog"

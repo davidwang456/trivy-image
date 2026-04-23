@@ -80,13 +80,25 @@ public class RegistryScanScheduleService {
     RegistryDatasource ds = registryDatasourceService.getById(s.getDatasourceId());
     try {
       if (StringUtils.hasText(s.getImageRef())) {
-        trivyScanService.scanAndStore(s.getImageRef().trim(), ds.getUsername(), ds.getPassword());
+        trivyScanService.scanAndStore(
+            s.getImageRef().trim(),
+            ds.getUsername(),
+            ds.getPassword(),
+            "system",
+            TrivyScanService.JOB_TYPE_CRON);
         return;
       }
       if (StringUtils.hasText(s.getRepoName())) {
         List<String> refs = registryDatasourceService.listImageRefs(ds.getId(), s.getRepoName().trim());
+        TrivyScanService.ScanMetadata metadata = trivyScanService.buildBatchMetadata(refs);
         for (String ref : refs) {
-          trivyScanService.scanAndStore(ref, ds.getUsername(), ds.getPassword());
+          trivyScanService.scanAndStore(
+              ref,
+              ds.getUsername(),
+              ds.getPassword(),
+              metadata,
+              "system",
+              TrivyScanService.JOB_TYPE_CRON);
         }
       }
     } catch (Exception ignored) {
