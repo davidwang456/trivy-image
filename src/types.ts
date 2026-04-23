@@ -24,14 +24,14 @@ export type VulnerabilityReportTarget = {
 
 export type Vulnerability = {
   id?: number | string
-  Title: string
-  Description: string
-  PrimaryURL: string
+  Title?: string
+  Description?: string
+  PrimaryURL?: string
   PkgName: string
   VulnerabilityID: string
   Severity: Severity
-  InstalledVersion: string
-  FixedVersion: string
+  InstalledVersion?: string
+  FixedVersion?: string
   Target: string
 }
 

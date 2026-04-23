@@ -8,7 +8,7 @@ import type {
 function setInvalidFormatError(): ReportError {
   return {
     title: "Invalid report format",
-    text: `The cannot be parsed. Please make sure the report is in the correct format.`,
+    text: `The report cannot be parsed. Please make sure the report is in the correct format.`,
     link: {
       text: "For more information check the 'Version1OrVersion2' interface",
       href: "https://github.com/dbsystel/trivy-vulnerability-explorer/blob/main/src/types.ts",
@@ -22,9 +22,10 @@ function isSchemaVersion2(
   return !!(!Array.isArray(obj) && obj.SchemaVersion && obj.SchemaVersion >= 2)
 }
 
-export function extractTargetsFromReport(
-  parsedReport: Version1OrVersion2,
-): { targets: VulnerabilityReportTarget[]; error?: ReportError } {
+export function extractTargetsFromReport(parsedReport: Version1OrVersion2): {
+  targets: VulnerabilityReportTarget[]
+  error?: ReportError
+} {
   let vulnerabilityTargets: VulnerabilityReportTarget[]
 
   try {
@@ -41,7 +42,9 @@ export function extractTargetsFromReport(
         const targetValid =
           i.Target && i.Vulnerabilities && Array.isArray(i.Vulnerabilities)
         const vulnerabilitiesValid = i.Vulnerabilities?.every(
-          (v) => v.PkgName && v.VulnerabilityID && (v.Title || v.Description),
+          // Some Trivy results legitimately omit Title/Description; those fields
+          // are display-only and should not make the whole report invalid.
+          (v) => v.PkgName && v.VulnerabilityID,
         )
         return targetValid && vulnerabilitiesValid
       })
