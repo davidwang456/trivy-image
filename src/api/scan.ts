@@ -61,6 +61,18 @@ export type ScanDashboardJob = {
   updateTime: string
 }
 
+export type ScanStats = {
+  jobTotal: number
+  imageRefTotal: number
+}
+
+/** One day in the last-7-days trend (by create_time date). */
+export type ScanDailyStat = {
+  date: string
+  jobTotal: number
+  imageRefTotal: number
+}
+
 export type ImportScanRequestBody = {
   imageRef?: string
   report: Version1OrVersion2
@@ -177,6 +189,32 @@ export async function getScanById(id: number): Promise<ScanResponseBody> {
       throw new Error(await readErrorMessage(res, `HTTP ${res.status}`))
     }
     return res.json() as Promise<ScanResponseBody>
+  } catch (error: unknown) {
+    throw withApiBaseHint(error)
+  }
+}
+
+export async function getScanStats(): Promise<ScanStats> {
+  try {
+    const url = `${apiBase()}/api/scans/stats`
+    const res = await fetch(url, withCredentials)
+    if (!res.ok) {
+      throw new Error(await readErrorMessage(res, `HTTP ${res.status}`))
+    }
+    return res.json() as Promise<ScanStats>
+  } catch (error: unknown) {
+    throw withApiBaseHint(error)
+  }
+}
+
+export async function getScanDailyTrend(): Promise<ScanDailyStat[]> {
+  try {
+    const url = `${apiBase()}/api/scans/stats/daily`
+    const res = await fetch(url, withCredentials)
+    if (!res.ok) {
+      throw new Error(await readErrorMessage(res, `HTTP ${res.status}`))
+    }
+    return res.json() as Promise<ScanDailyStat[]>
   } catch (error: unknown) {
     throw withApiBaseHint(error)
   }

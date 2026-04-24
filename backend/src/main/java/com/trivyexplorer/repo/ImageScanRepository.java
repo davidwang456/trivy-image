@@ -2,6 +2,7 @@ package com.trivyexplorer.repo;
 
 import com.trivyexplorer.domain.ImageScan;
 import com.trivyexplorer.web.dto.ImageScanSummary;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.domain.Pageable;
@@ -29,4 +30,22 @@ public interface ImageScanRepository extends JpaRepository<ImageScan, Long> {
   List<ImageScanSummary> findSummariesByImageRef(@Param("q") String q, Pageable pageable);
 
   List<ImageScan> findAllByOrderByCreateTimeDesc();
+
+  @Query("SELECT COUNT(DISTINCT i.jobId) FROM ImageScan i")
+  long countDistinctJobIds();
+
+  @Query("SELECT COUNT(i) FROM ImageScan i")
+  long countAllScans();
+
+  @Query(
+      value =
+          "SELECT CAST(i.create_time AS date) AS stat_day,"
+              + " COUNT(DISTINCT i.job_id) AS job_total,"
+              + " COUNT(*) AS image_ref_total"
+              + " FROM image_scans i"
+              + " WHERE i.create_time >= :start"
+              + " GROUP BY CAST(i.create_time AS date)"
+              + " ORDER BY stat_day",
+      nativeQuery = true)
+  List<Object[]> aggregateDailySince(@Param("start") Instant start);
 }

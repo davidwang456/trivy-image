@@ -8,12 +8,17 @@ import com.trivyexplorer.web.dto.ImportScanRequest;
 import com.trivyexplorer.web.dto.ImageScanSummary;
 import com.trivyexplorer.web.dto.ScanDashboardNode;
 import com.trivyexplorer.web.dto.ScanResponse;
+import com.trivyexplorer.web.dto.ScanDailyStatResponse;
+import com.trivyexplorer.web.dto.ScanStatsResponse;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -41,6 +46,55 @@ public class StoredScanService {
       ImageScanRepository imageScanRepository, ObjectMapper objectMapper) {
     this.imageScanRepository = imageScanRepository;
     this.objectMapper = objectMapper;
+  }
+
+  @Transactional(readOnly = true)
+  public ScanStatsResponse scanStats() {
+    long jobTotal = imageScanRepository.countDistinctJobIds();
+    long imageRefTotal = imageScanRepository.countAllScans();
+    return new ScanStatsResponse(jobTotal, imageRefTotal);
+  }
+
+  /**
+   * Last 7 calendar days (inclusive) from today in the JVM default timezone: for each day,
+   * distinct {@code job_id} count and row count ({@code image_ref} rows), grouped by {@code
+   * create_time} date.
+   */
+  @Transactional(readOnly = true)
+  public List<ScanDailyStatResponse> dailyTrendLast7Days() {
+    ZoneId zone = ZoneId.systemDefault();
+    LocalDate today = LocalDate.now(zone);
+    LocalDate firstDay = today.minusDays(6);
+    Instant start = firstDay.atStartOfDay(zone).toInstant();
+
+    List<Object[]> rows = imageScanRepository.aggregateDailySince(start);
+    Map<LocalDate, long[]> byDay = new HashMap<>();
+    for (Object[] row : rows) {
+      if (row == null || row.length < 3 || row[0] == null) {
+        continue;
+      }
+      LocalDate d;
+      if (row[0] instanceof java.sql.Date sqlDate) {
+        d = sqlDate.toLocalDate();
+      } else if (row[0] instanceof java.sql.Timestamp ts) {
+        d = ts.toLocalDateTime().toLocalDate();
+      } else if (row[0] instanceof LocalDate ld) {
+        d = ld;
+      } else {
+        continue;
+      }
+      long jobs = ((Number) row[1]).longValue();
+      long images = ((Number) row[2]).longValue();
+      byDay.put(d, new long[] {jobs, images});
+    }
+
+    List<ScanDailyStatResponse> out = new ArrayList<>(7);
+    for (int i = 0; i < 7; i++) {
+      LocalDate d = firstDay.plusDays(i);
+      long[] v = byDay.getOrDefault(d, new long[] {0L, 0L});
+      out.add(new ScanDailyStatResponse(d.toString(), v[0], v[1]));
+    }
+    return out;
   }
 
   @Transactional(readOnly = true)

@@ -5,6 +5,21 @@
       Job -> System -> Project table view with pagination.
     </p>
 
+    <v-card variant="outlined" class="mb-6">
+      <v-card-title class="text-subtitle-1">
+        Overview (<code>image_scans</code> in PostgreSQL)
+      </v-card-title>
+      <v-card-text>
+        <p class="text-body-2 text-medium-emphasis mb-2">
+          Last 7 calendar days (including today), grouped by
+          <code>create_time</code> date. Grouped bar chart: distinct
+          <code>job_id</code> count per day and <code>image_ref</code> row count
+          per day.
+        </p>
+        <div ref="chartRef" class="chart-host" />
+      </v-card-text>
+    </v-card>
+
     <v-alert v-if="error" color="error" variant="outlined" class="mb-4">
       {{ error }}
     </v-alert>
@@ -70,10 +85,18 @@
 
 <script setup lang="ts">
 import DataTable from "@/components/DataTable.vue"
-import { getScanById, listScans, type ScanSummary } from "@/api/scan"
+import {
+  getScanById,
+  getScanDailyTrend,
+  listScans,
+  type ScanDailyStat,
+  type ScanSummary,
+} from "@/api/scan"
 import type { Vulnerability } from "@/types"
 import { extractTargetsFromReport } from "@/utils/trivyReport"
-import { computed, onMounted, ref } from "vue"
+import * as echarts from "echarts"
+import type { ECharts, EChartsOption } from "echarts"
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue"
 
 type DashboardRow = {
   key: string
@@ -97,6 +120,10 @@ const search = ref("")
 const selectedVulnerabilities = ref<Vulnerability[]>([])
 const selectedScanId = ref<number>()
 const selectedImageRef = ref("")
+const chartRef = ref<HTMLDivElement | null>(null)
+const dailyTrend = ref<ScanDailyStat[]>([])
+let chartInstance: ECharts | null = null
+let resizeObserver: ResizeObserver | null = null
 
 const headers = [
   { title: "ImageRef", key: "imageRef" },
@@ -123,20 +150,100 @@ const filteredRows = computed(() => {
 })
 
 onMounted(() => {
-  void loadRows()
+  void loadDashboard()
 })
 
-async function loadRows() {
+watch(
+  dailyTrend,
+  () => {
+    if (chartInstance) {
+      chartInstance.setOption(buildChartOption(), true)
+    }
+  },
+  { deep: true },
+)
+
+onBeforeUnmount(() => {
+  resizeObserver?.disconnect()
+  resizeObserver = null
+  chartInstance?.dispose()
+  chartInstance = null
+})
+
+async function loadDashboard() {
   loading.value = true
   error.value = undefined
   try {
-    const scans = await listScans()
+    const [scans, trend] = await Promise.all([listScans(), getScanDailyTrend()])
     rows.value = buildRows(scans)
+    dailyTrend.value = trend
+    await nextTick()
+    initOrUpdateChart()
   } catch (e: unknown) {
     error.value = e instanceof Error ? e.message : String(e)
   } finally {
     loading.value = false
   }
+}
+
+function formatAxisDate(isoDate: string): string {
+  const d = new Date(isoDate + "T12:00:00")
+  return Number.isNaN(d.getTime())
+    ? isoDate
+    : `${d.getMonth() + 1}/${d.getDate()}`
+}
+
+function buildChartOption(): EChartsOption {
+  const days = dailyTrend.value
+  const categories = days.map((d) => formatAxisDate(d.date))
+  const jobSeries = days.map((d) => d.jobTotal)
+  const imageSeries = days.map((d) => d.imageRefTotal)
+  return {
+    tooltip: { trigger: "axis", axisPointer: { type: "shadow" } },
+    legend: {
+      data: ["Jobs (distinct job_id)", "ImageRef rows"],
+      top: 0,
+    },
+    grid: { left: 48, right: 24, bottom: 32, top: 40, containLabel: true },
+    xAxis: {
+      type: "category",
+      data: categories,
+      axisTick: { alignWithLabel: true },
+    },
+    yAxis: { type: "value", minInterval: 1 },
+    series: [
+      {
+        type: "bar",
+        name: "Jobs (distinct job_id)",
+        data: jobSeries,
+        barMaxWidth: 32,
+        barGap: "12%",
+        itemStyle: { color: "#1976d2", borderRadius: [4, 4, 0, 0] },
+        emphasis: { focus: "series" },
+        label: { show: true, position: "top", formatter: "{c}" },
+      },
+      {
+        type: "bar",
+        name: "ImageRef rows",
+        data: imageSeries,
+        barMaxWidth: 32,
+        itemStyle: { color: "#00897b", borderRadius: [4, 4, 0, 0] },
+        emphasis: { focus: "series" },
+        label: { show: true, position: "top", formatter: "{c}" },
+      },
+    ],
+  }
+}
+
+function initOrUpdateChart() {
+  const el = chartRef.value
+  if (!el) return
+  if (!chartInstance) {
+    chartInstance = echarts.init(el, undefined, { renderer: "canvas" })
+    resizeObserver = new ResizeObserver(() => chartInstance?.resize())
+    resizeObserver.observe(el)
+  }
+  chartInstance.setOption(buildChartOption(), true)
 }
 
 function buildRows(scans: ScanSummary[]): DashboardRow[] {
@@ -190,3 +297,11 @@ function formatDateTime(value: string): string {
   return Number.isNaN(d.getTime()) ? value : d.toLocaleString()
 }
 </script>
+
+<style scoped>
+.chart-host {
+  width: 100%;
+  min-width: 0;
+  height: 320px;
+}
+</style>

@@ -11,6 +11,8 @@ import com.trivyexplorer.web.dto.ImageScanSummary;
 import com.trivyexplorer.web.dto.ScanDashboardNode;
 import com.trivyexplorer.web.dto.ScanRequest;
 import com.trivyexplorer.web.dto.ScanResponse;
+import com.trivyexplorer.web.dto.ScanDailyStatResponse;
+import com.trivyexplorer.web.dto.ScanStatsResponse;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import java.io.IOException;
@@ -47,6 +49,16 @@ public class ScanController {
   @GetMapping
   public List<ImageScanSummary> list(@RequestParam(required = false) String q) {
     return storedScanService.listSummaries(q);
+  }
+
+  @GetMapping("/stats")
+  public ScanStatsResponse scanStats() {
+    return storedScanService.scanStats();
+  }
+
+  @GetMapping("/stats/daily")
+  public List<ScanDailyStatResponse> scanStatsDaily() {
+    return storedScanService.dailyTrendLast7Days();
   }
 
   @GetMapping("/{id}")
