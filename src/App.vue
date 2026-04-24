@@ -33,9 +33,23 @@
         <v-list-item
           v-if="isAuthenticated"
           :active="route.name === 'dashboard'"
-          prepend-icon="mdi-view-dashboard"
-          title="Dashboard"
+          prepend-icon="mdi-briefcase-outline"
+          title="Jobs"
           @click="goTo('dashboard')"
+        />
+        <v-list-item
+          v-if="isAuthenticated"
+          :active="route.name === 'systems'"
+          prepend-icon="mdi-server-network"
+          title="Systems"
+          @click="goTo('systems')"
+        />
+        <v-list-item
+          v-if="isAuthenticated"
+          :active="route.name === 'projects'"
+          prepend-icon="mdi-folder-multiple-outline"
+          title="Projects"
+          @click="goTo('projects')"
         />
         <v-list-item
           v-if="isAuthenticated && isAdmin"

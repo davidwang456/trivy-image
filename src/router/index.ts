@@ -2,8 +2,10 @@ import ChangePasswordPage from "@/pages/ChangePasswordPage.vue"
 import DashboardPage from "@/pages/DashboardPage.vue"
 import HomePage from "@/pages/HomePage.vue"
 import LoginPage from "@/pages/LoginPage.vue"
+import ProjectPage from "@/pages/ProjectPage.vue"
 import RegistryDatasourcePage from "@/pages/RegistryDatasourcePage.vue"
 import ScanPage from "@/pages/ScanPage.vue"
+import SystemPage from "@/pages/SystemPage.vue"
 import UserManagementPage from "@/pages/UserManagementPage.vue"
 /**
  * router/index.ts
@@ -41,6 +43,18 @@ const router = createRouter({
       name: "dashboard",
       component: DashboardPage,
       meta: { i18nKey: "dashboard", requiresAuth: true },
+    },
+    {
+      path: "/systems",
+      name: "systems",
+      component: SystemPage,
+      meta: { i18nKey: "systems", requiresAuth: true },
+    },
+    {
+      path: "/projects",
+      name: "projects",
+      component: ProjectPage,
+      meta: { i18nKey: "projects", requiresAuth: true },
     },
     {
       path: "/login",

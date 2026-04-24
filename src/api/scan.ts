@@ -124,7 +124,7 @@ async function readErrorMessage(
 
 export async function scanImage(
   body: ScanRequestBody,
-): Promise<ScanResponseBody> {
+): Promise<ScanResponseBody[]> {
   try {
     const url = `${apiBase()}/api/scans`
     const res = await fetch(url, {
@@ -136,7 +136,7 @@ export async function scanImage(
     if (!res.ok) {
       throw new Error(await readErrorMessage(res, `HTTP ${res.status}`))
     }
-    return res.json() as Promise<ScanResponseBody>
+    return res.json() as Promise<ScanResponseBody[]>
   } catch (error: unknown) {
     throw withApiBaseHint(error)
   }

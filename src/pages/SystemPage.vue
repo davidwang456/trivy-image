@@ -1,10 +1,14 @@
 <template>
   <v-container class="py-8">
-    <h2 class="text-h5 mb-2">Job Layer Dashboard</h2>
+    <h2 class="text-h5 mb-2">System Layer</h2>
     <p class="text-medium-emphasis mb-4">
-      Top hierarchy view. Use the left navigation for Systems and Projects, or
-      use table links to drill down.
+      Grouped by job and system. Use the left navigation to switch layers; use
+      table links to drill down.
     </p>
+
+    <v-alert v-if="jobIdFilter" type="info" variant="tonal" class="mb-4">
+      Filtered by JobId: <strong>{{ jobIdFilter }}</strong>
+    </v-alert>
 
     <v-card variant="outlined" class="mb-6">
       <v-card-title class="text-subtitle-1">Recent 7-day trend</v-card-title>
@@ -13,29 +17,6 @@
       </v-card-text>
     </v-card>
 
-    <v-row dense class="mb-4">
-      <v-col cols="12" sm="6" md="3">
-        <v-card variant="tonal" color="primary"
-          ><v-card-text>Jobs: {{ jobCount }}</v-card-text></v-card
-        >
-      </v-col>
-      <v-col cols="12" sm="6" md="3">
-        <v-card variant="tonal" color="secondary"
-          ><v-card-text>Systems: {{ totalSystems }}</v-card-text></v-card
-        >
-      </v-col>
-      <v-col cols="12" sm="6" md="3">
-        <v-card variant="tonal" color="info"
-          ><v-card-text>Projects: {{ totalProjects }}</v-card-text></v-card
-        >
-      </v-col>
-      <v-col cols="12" sm="6" md="3">
-        <v-card variant="tonal" color="success"
-          ><v-card-text>ImageRefs: {{ totalImages }}</v-card-text></v-card
-        >
-      </v-col>
-    </v-row>
-
     <v-alert v-if="error" color="error" variant="outlined" class="mb-4">{{
       error
     }}</v-alert>
@@ -43,7 +24,7 @@
     <v-text-field
       v-model="search"
       class="mb-4"
-      label="Search jobs (jobId/jobName/type/createBy)"
+      label="Search systems (jobId/jobName/system/createBy)"
       prepend-inner-icon="mdi-magnify"
       variant="solo-filled"
       flat
@@ -61,14 +42,14 @@
       :items-per-page="15"
       :items-per-page-options="[10, 15, 30, 50]"
     >
-      <template #item.systemCount="{ item }">
+      <template #item.jobId="{ item }">
         <v-btn
           variant="text"
           color="primary"
           class="px-0 text-none"
-          :to="{ name: 'systems', query: { jobId: item.jobId } }"
+          :to="{ name: 'dashboard' }"
         >
-          {{ item.systemCount }}
+          {{ item.jobId }}
         </v-btn>
       </template>
       <template #item.projectCount="{ item }">
@@ -76,7 +57,10 @@
           variant="text"
           color="primary"
           class="px-0 text-none"
-          :to="{ name: 'projects', query: { jobId: item.jobId } }"
+          :to="{
+            name: 'projects',
+            query: { jobId: item.jobId, system: item.systemName },
+          }"
         >
           {{ item.projectCount }}
         </v-btn>
@@ -92,63 +76,58 @@
 </template>
 
 <script setup lang="ts">
-import { getScanDailyTrend, listScans, type ScanDailyStat } from "@/api/scan"
-import { aggregateJobs, type JobRow } from "@/utils/scanHierarchy"
+import { listScans, type ScanSummary } from "@/api/scan"
+import { aggregateSystems, type SystemRow } from "@/utils/scanHierarchy"
 import * as echarts from "echarts"
 import type { ECharts, EChartsOption } from "echarts"
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue"
+import { useRoute } from "vue-router"
 
+const route = useRoute()
 const loading = ref(false)
 const error = ref<string>()
-const rows = ref<JobRow[]>([])
+const rows = ref<SystemRow[]>([])
 const search = ref("")
-const dailyTrend = ref<ScanDailyStat[]>([])
 const chartRef = ref<HTMLDivElement | null>(null)
+const trendProjects = ref<number[]>([])
+const trendImages = ref<number[]>([])
+const trendDays = ref<string[]>([])
 let chartInstance: ECharts | null = null
 let resizeObserver: ResizeObserver | null = null
 
 const headers = [
+  { title: "System", key: "systemName" },
+  { title: "Projects", key: "projectCount" },
   { title: "JobId", key: "jobId" },
   { title: "JobName", key: "jobName" },
   { title: "JobType", key: "jobType" },
-  { title: "Systems", key: "systemCount" },
-  { title: "Projects", key: "projectCount" },
   { title: "CreateBy", key: "createBy" },
   { title: "UpdateBy", key: "updateBy" },
   { title: "CreateTime", key: "createTime" },
   { title: "UpdateTime", key: "updateTime" },
 ]
 
+const jobIdFilter = computed(() => {
+  const raw = route.query.jobId
+  return typeof raw === "string" && raw.trim() ? raw.trim() : ""
+})
+
 const filteredRows = computed(() => {
   const q = search.value.trim().toLowerCase()
   if (!q) return rows.value
   return rows.value.filter((r) =>
-    [r.jobId, r.jobName, r.jobType, r.createBy, r.updateBy]
+    [r.jobId, r.jobName, r.systemName, r.createBy]
       .join(" ")
       .toLowerCase()
       .includes(q),
   )
 })
 
-const jobCount = computed(() => rows.value.length)
-const totalSystems = computed(() =>
-  rows.value.reduce((a, b) => a + b.systemCount, 0),
+onMounted(() => void load())
+watch(jobIdFilter, () => void load())
+watch([trendDays, trendProjects, trendImages], () =>
+  chartInstance?.setOption(buildChartOption(), true),
 )
-const totalProjects = computed(() =>
-  rows.value.reduce((a, b) => a + b.projectCount, 0),
-)
-const totalImages = computed(() =>
-  rows.value.reduce((a, b) => a + b.imageCount, 0),
-)
-
-onMounted(() => {
-  void load()
-})
-
-watch(dailyTrend, () => chartInstance?.setOption(buildChartOption(), true), {
-  deep: true,
-})
-
 onBeforeUnmount(() => {
   resizeObserver?.disconnect()
   resizeObserver = null
@@ -160,9 +139,12 @@ async function load() {
   loading.value = true
   error.value = undefined
   try {
-    const [scans, trend] = await Promise.all([listScans(), getScanDailyTrend()])
-    rows.value = aggregateJobs(scans)
-    dailyTrend.value = trend
+    const scans = await listScans()
+    const scopedScans = jobIdFilter.value
+      ? scans.filter((s) => s.jobId === jobIdFilter.value)
+      : scans
+    buildDailyTrend(scopedScans)
+    rows.value = aggregateSystems(scans, jobIdFilter.value || undefined)
     await nextTick()
     initOrUpdateChart()
   } catch (e: unknown) {
@@ -172,37 +154,61 @@ async function load() {
   }
 }
 
-function formatAxisDate(isoDate: string): string {
-  const d = new Date(isoDate + "T12:00:00")
-  return Number.isNaN(d.getTime())
-    ? isoDate
-    : `${d.getMonth() + 1}/${d.getDate()}`
+function buildDailyTrend(scans: ScanSummary[]) {
+  const dates = Array.from({ length: 7 }, (_, idx) => {
+    const d = new Date()
+    d.setHours(0, 0, 0, 0)
+    d.setDate(d.getDate() - (6 - idx))
+    return d
+  })
+  const dayKeys = dates.map((d) => formatDayKey(d))
+  const buckets = new Map<string, { projects: Set<string>; images: number }>(
+    dayKeys.map((k) => [k, { projects: new Set<string>(), images: 0 }]),
+  )
+  for (const s of scans) {
+    const key = formatDayKey(new Date(s.createTime))
+    const bucket = buckets.get(key)
+    if (!bucket) continue
+    bucket.images += 1
+    bucket.projects.add(`${s.jobId}|${s.systemName}|${s.projectName}`)
+  }
+  trendDays.value = dates.map((d) => `${d.getMonth() + 1}/${d.getDate()}`)
+  trendProjects.value = dayKeys.map((k) => buckets.get(k)?.projects.size ?? 0)
+  trendImages.value = dayKeys.map((k) => buckets.get(k)?.images ?? 0)
+}
+
+function formatDayKey(date: Date): string {
+  const d = new Date(date)
+  if (Number.isNaN(d.getTime())) return ""
+  d.setHours(0, 0, 0, 0)
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
+    d.getDate(),
+  ).padStart(2, "0")}`
 }
 
 function buildChartOption(): EChartsOption {
-  const categories = dailyTrend.value.map((d) => formatAxisDate(d.date))
   return {
     tooltip: { trigger: "axis", axisPointer: { type: "shadow" } },
-    legend: { data: ["Jobs", "ImageRefs"], top: 0 },
+    legend: { data: ["Projects", "ImageRefs"], top: 0 },
     grid: { left: 48, right: 24, bottom: 32, top: 40, containLabel: true },
     xAxis: {
       type: "category",
-      data: categories,
+      data: trendDays.value,
       axisTick: { alignWithLabel: true },
     },
     yAxis: { type: "value", minInterval: 1 },
     series: [
       {
         type: "bar",
-        name: "Jobs",
-        data: dailyTrend.value.map((d) => d.jobTotal),
+        name: "Projects",
+        data: trendProjects.value,
         barMaxWidth: 32,
-        itemStyle: { color: "#1976d2", borderRadius: [4, 4, 0, 0] },
+        itemStyle: { color: "#1e88e5", borderRadius: [4, 4, 0, 0] },
       },
       {
         type: "bar",
         name: "ImageRefs",
-        data: dailyTrend.value.map((d) => d.imageRefTotal),
+        data: trendImages.value,
         barMaxWidth: 32,
         itemStyle: { color: "#00897b", borderRadius: [4, 4, 0, 0] },
       },

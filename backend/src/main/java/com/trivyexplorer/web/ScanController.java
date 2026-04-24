@@ -18,8 +18,14 @@ import jakarta.validation.Valid;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -32,6 +38,7 @@ import org.springframework.web.server.ResponseStatusException;
 @RestController
 @RequestMapping("/api/scans")
 public class ScanController {
+  private static final int SCAN_THREAD_POOL_SIZE = 20;
 
   private final TrivyScanService trivyScanService;
   private final StoredScanService storedScanService;
@@ -84,14 +91,63 @@ public class ScanController {
   }
 
   @PostMapping
-  public ResponseEntity<ScanResponse> scan(
-      @Valid @RequestBody ScanRequest request, HttpSession session)
-      throws IOException, InterruptedException {
+  public ResponseEntity<List<ScanResponse>> scan(
+      @Valid @RequestBody ScanRequest request, HttpSession session) {
     String operator = requireAuthenticatedUsername(session);
     RegistryDatasource ds = registryDatasourceService.getById(request.getDatasourceId());
-    return ResponseEntity.ok(
-        trivyScanService.scanAndStore(
-            request.getImageRef(), ds.getUsername(), ds.getPassword(), operator));
+    List<String> imageRefs =
+        List.of(request.getImageRef().split(",")).stream()
+            .map(String::trim)
+            .filter(StringUtils::hasText)
+            .distinct()
+            .toList();
+    if (imageRefs.isEmpty()) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "imageRef must not be blank");
+    }
+
+    String sharedJobId = UUID.randomUUID().toString();
+    ExecutorService executor = Executors.newFixedThreadPool(SCAN_THREAD_POOL_SIZE);
+    try {
+      List<CompletableFuture<ScanResponse>> tasks =
+          imageRefs.stream()
+              .map(
+                  imageRef ->
+                      CompletableFuture.supplyAsync(
+                          () -> {
+                            TrivyScanService.ImageHierarchy hierarchy =
+                                TrivyScanService.resolveHierarchy(imageRef);
+                            TrivyScanService.ScanMetadata metadata =
+                                new TrivyScanService.ScanMetadata(
+                                    sharedJobId,
+                                    hierarchy.systemName() + "/" + hierarchy.projectName(),
+                                    hierarchy.systemName(),
+                                    hierarchy.projectName());
+                            try {
+                              return trivyScanService.scanAndStore(
+                                  imageRef,
+                                  ds.getUsername(),
+                                  ds.getPassword(),
+                                  metadata,
+                                  operator,
+                                  TrivyScanService.JOB_TYPE_MANUAL);
+                            } catch (InterruptedException e) {
+                              Thread.currentThread().interrupt();
+                              throw new CompletionException(e);
+                            } catch (IOException e) {
+                              throw new CompletionException(e);
+                            }
+                          },
+                          executor))
+              .toList();
+      List<ScanResponse> result = tasks.stream().map(CompletableFuture::join).toList();
+      return ResponseEntity.ok(result);
+    } catch (CompletionException e) {
+      Throwable cause = e.getCause() == null ? e : e.getCause();
+      String message = cause.getMessage() == null ? "Scan failed" : cause.getMessage();
+      throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, message, cause);
+    } finally {
+      executor.shutdown();
+    }
   }
 
   @PostMapping("/batch")
