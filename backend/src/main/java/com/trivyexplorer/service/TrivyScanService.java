@@ -11,10 +11,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -131,30 +131,7 @@ public class TrivyScanService {
       JsonNode root = objectMapper.readTree(jsonBytes);
 
       String ref = imageRef.trim();
-      Optional<ImageScan> existing = imageScanRepository.findByImageRef(ref);
-      ImageScan entity;
-      if (existing.isPresent()) {
-        entity = existing.get();
-        entity.setJobId(metadata.jobId());
-        entity.setJobName(metadata.jobName());
-        entity.setSystemName(metadata.systemName());
-        entity.setProjectName(metadata.projectName());
-        entity.setJobType(normalizeJobType(jobType));
-        entity.setUpdateBy(operator);
-        entity.setReportJson(jsonBytes);
-      } else {
-        entity = new ImageScan();
-        entity.setImageRef(ref);
-        entity.setJobId(metadata.jobId());
-        entity.setJobName(metadata.jobName());
-        entity.setSystemName(metadata.systemName());
-        entity.setProjectName(metadata.projectName());
-        entity.setJobType(normalizeJobType(jobType));
-        entity.setCreateBy(operator);
-        entity.setUpdateBy(operator);
-        entity.setReportJson(jsonBytes);
-      }
-      ImageScan saved = imageScanRepository.save(entity);
+      ImageScan saved = upsertScanByImageRef(ref, metadata, operator, jobType, jsonBytes);
 
       return new ScanResponse(
           saved.getId(),
@@ -172,6 +149,44 @@ public class TrivyScanService {
     } finally {
       Files.deleteIfExists(output);
     }
+  }
+
+  private ImageScan upsertScanByImageRef(
+      String imageRef, ScanMetadata metadata, String operator, String jobType, byte[] jsonBytes) {
+    try {
+      ImageScan entity =
+          imageScanRepository
+              .findByImageRef(imageRef)
+              .map(existing -> applyScanFields(existing, metadata, operator, jobType, jsonBytes))
+              .orElseGet(
+                  () -> {
+                    ImageScan created = new ImageScan();
+                    created.setImageRef(imageRef);
+                    created.setCreateBy(operator);
+                    return applyScanFields(created, metadata, operator, jobType, jsonBytes);
+                  });
+      return imageScanRepository.saveAndFlush(entity);
+    } catch (DataIntegrityViolationException e) {
+      // Another concurrent transaction inserted the same imageRef first.
+      ImageScan existing =
+          imageScanRepository
+              .findByImageRef(imageRef)
+              .orElseThrow(() -> new IllegalStateException("Failed to upsert image scan: " + imageRef, e));
+      applyScanFields(existing, metadata, operator, jobType, jsonBytes);
+      return imageScanRepository.saveAndFlush(existing);
+    }
+  }
+
+  private static ImageScan applyScanFields(
+      ImageScan entity, ScanMetadata metadata, String operator, String jobType, byte[] jsonBytes) {
+    entity.setJobId(metadata.jobId());
+    entity.setJobName(metadata.jobName());
+    entity.setSystemName(metadata.systemName());
+    entity.setProjectName(metadata.projectName());
+    entity.setJobType(normalizeJobType(jobType));
+    entity.setUpdateBy(operator);
+    entity.setReportJson(jsonBytes);
+    return entity;
   }
 
   private static String truncate(String s, int maxLen) {
