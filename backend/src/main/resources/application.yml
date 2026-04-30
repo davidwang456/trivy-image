@@ -1,7 +1,7 @@
 server:
   port: 9080
   servlet:
-    context-path: /trivy-vulnerability-explorer
+    context-path: /
 
 spring:
   datasource:
