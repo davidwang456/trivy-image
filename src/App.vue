@@ -10,7 +10,7 @@
     >
       <div class="drawer-header">
         <img class="icon" src="/logo_dark_bg.svg" alt="" />
-        <span class="title">Trivy Explorer</span>
+        <span class="title">GOS Explorer</span>
       </div>
 
       <v-divider />
@@ -119,7 +119,7 @@
 
     <v-app-bar color="primary" dark>
       <v-app-bar-nav-icon v-if="isMobile" @click="drawer = !drawer" />
-      <v-app-bar-title>Trivy Vulnerability Explorer</v-app-bar-title>
+      <v-app-bar-title>GOS Vulnerability Explorer</v-app-bar-title>
     </v-app-bar>
 
     <v-main>

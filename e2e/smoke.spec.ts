@@ -11,7 +11,7 @@ const testReportUrl = `https://raw.githubusercontent.com/dbsystel/trivy-vulnerab
 test("should have the correct title", async ({ page }) => {
   const homePage = new HomePage(page)
   await homePage.goto()
-  await homePage.hasTitle("Trivy Vulnerability Explorer")
+  await homePage.hasTitle("GOS Vulnerability Explorer")
 })
 
 test("fetches from URL", async ({ page }) => {
