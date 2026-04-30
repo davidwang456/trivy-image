@@ -7,6 +7,7 @@ import RegistryDatasourcePage from "@/pages/RegistryDatasourcePage.vue"
 import ScanPage from "@/pages/ScanPage.vue"
 import ScanNamespacePage from "@/pages/ScanNamespacePage.vue"
 import ScanRepoPage from "@/pages/ScanRepoPage.vue"
+import ScanCcePage from "@/pages/ScanCcePage.vue"
 import SystemPage from "@/pages/SystemPage.vue"
 import UserManagementPage from "@/pages/UserManagementPage.vue"
 /**
@@ -57,6 +58,12 @@ const router = createRouter({
       name: "scan-repo",
       component: ScanRepoPage,
       meta: { i18nKey: "scan-repo", requiresAuth: true, adminOnly: true },
+    },
+    {
+      path: "/scan-cce",
+      name: "scan-cce",
+      component: ScanCcePage,
+      meta: { i18nKey: "scan-cce", requiresAuth: true, adminOnly: true },
     },
     {
       path: "/systems",

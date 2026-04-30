@@ -45,6 +45,13 @@
           @click="goTo('scan-repo')"
         />
         <v-list-item
+          v-if="isAuthenticated && isAdmin"
+          :active="route.name === 'scan-cce'"
+          prepend-icon="mdi-cloud-outline"
+          title="Scan Huawei CCE"
+          @click="goTo('scan-cce')"
+        />
+        <v-list-item
           v-if="isAuthenticated"
           :active="route.name === 'dashboard'"
           prepend-icon="mdi-briefcase-outline"
