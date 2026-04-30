@@ -104,50 +104,7 @@ public class ScanController {
     if (imageRefs.isEmpty()) {
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "imageRef must not be blank");
     }
-
-    String sharedJobId = UUID.randomUUID().toString();
-    ExecutorService executor = Executors.newFixedThreadPool(SCAN_THREAD_POOL_SIZE);
-    try {
-      List<CompletableFuture<ScanResponse>> tasks =
-          imageRefs.stream()
-              .map(
-                  imageRef ->
-                      CompletableFuture.supplyAsync(
-                          () -> {
-                            TrivyScanService.ImageHierarchy hierarchy =
-                                TrivyScanService.resolveHierarchy(imageRef);
-                            TrivyScanService.ScanMetadata metadata =
-                                new TrivyScanService.ScanMetadata(
-                                    sharedJobId,
-                                    hierarchy.systemName() + "/" + hierarchy.projectName(),
-                                    hierarchy.systemName(),
-                                    hierarchy.projectName());
-                            try {
-                              return trivyScanService.scanAndStore(
-                                  imageRef,
-                                  ds.getUsername(),
-                                  ds.getPassword(),
-                                  metadata,
-                                  operator,
-                                  TrivyScanService.JOB_TYPE_MANUAL);
-                            } catch (InterruptedException e) {
-                              Thread.currentThread().interrupt();
-                              throw new CompletionException(e);
-                            } catch (IOException e) {
-                              throw new CompletionException(e);
-                            }
-                          },
-                          executor))
-              .toList();
-      List<ScanResponse> result = tasks.stream().map(CompletableFuture::join).toList();
-      return ResponseEntity.ok(result);
-    } catch (CompletionException e) {
-      Throwable cause = e.getCause() == null ? e : e.getCause();
-      String message = cause.getMessage() == null ? "Scan failed" : cause.getMessage();
-      throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, message, cause);
-    } finally {
-      executor.shutdown();
-    }
+    return ResponseEntity.ok(scanImagesConcurrently(imageRefs, ds, operator));
   }
 
   @PostMapping("/batch")
@@ -185,5 +142,51 @@ public class ScanController {
       throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Not authenticated");
     }
     return s.trim();
+  }
+
+  private List<ScanResponse> scanImagesConcurrently(
+      List<String> imageRefs, RegistryDatasource ds, String operator) {
+    String sharedJobId = UUID.randomUUID().toString();
+    ExecutorService executor = Executors.newFixedThreadPool(SCAN_THREAD_POOL_SIZE);
+    try {
+      List<CompletableFuture<ScanResponse>> tasks =
+          imageRefs.stream()
+              .map(
+                  imageRef ->
+                      CompletableFuture.supplyAsync(
+                          () -> {
+                            TrivyScanService.ImageHierarchy hierarchy =
+                                TrivyScanService.resolveHierarchy(imageRef);
+                            TrivyScanService.ScanMetadata metadata =
+                                new TrivyScanService.ScanMetadata(
+                                    sharedJobId,
+                                    hierarchy.systemName() + "/" + hierarchy.projectName(),
+                                    hierarchy.systemName(),
+                                    hierarchy.projectName());
+                            try {
+                              return trivyScanService.scanAndStore(
+                                  imageRef,
+                                  ds.getUsername(),
+                                  ds.getPassword(),
+                                  metadata,
+                                  operator,
+                                  TrivyScanService.JOB_TYPE_MANUAL);
+                            } catch (InterruptedException e) {
+                              Thread.currentThread().interrupt();
+                              throw new CompletionException(e);
+                            } catch (IOException e) {
+                              throw new CompletionException(e);
+                            }
+                          },
+                          executor))
+              .toList();
+      return tasks.stream().map(CompletableFuture::join).toList();
+    } catch (CompletionException e) {
+      Throwable cause = e.getCause() == null ? e : e.getCause();
+      String message = cause.getMessage() == null ? "Scan failed" : cause.getMessage();
+      throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, message, cause);
+    } finally {
+      executor.shutdown();
+    }
   }
 }

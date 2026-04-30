@@ -15,6 +15,15 @@
   <name>trivy-scan-api</name>
   <properties>
     <java.version>17</java.version>
+    <!-- mvn -DskipNpm=true ... avoids PowerShell parsing issues with dotted properties -->
+    <skipNpm>false</skipNpm>
+    <frontend-maven-plugin.version>1.15.0</frontend-maven-plugin.version>
+    <jib-maven-plugin.version>3.4.5</jib-maven-plugin.version>
+    <!-- Align with package.json engines.node -->
+    <node.version>v22.14.0</node.version>
+    <!-- Override for registry push: mvn -Djib.to.image=myregistry/trivy-scan-api:1.0.0 jib:build -->
+    <jib.from.image>eclipse-temurin:17-jre-jammy</jib.from.image>
+    <jib.to.image>trivyexplorer/trivy-scan-api:latest</jib.to.image>
   </properties>
   <dependencies>
     <dependency>
@@ -45,6 +54,68 @@
       <plugin>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-maven-plugin</artifactId>
+      </plugin>
+      <plugin>
+        <groupId>com.github.eirslett</groupId>
+        <artifactId>frontend-maven-plugin</artifactId>
+        <version>${frontend-maven-plugin.version}</version>
+        <configuration>
+          <workingDirectory>${project.basedir}/..</workingDirectory>
+          <installDirectory>${project.build.directory}/frontend-node</installDirectory>
+          <skip>${skipNpm}</skip>
+        </configuration>
+        <executions>
+          <execution>
+            <id>install-node-and-npm</id>
+            <goals>
+              <goal>install-node-and-npm</goal>
+            </goals>
+            <phase>generate-resources</phase>
+            <configuration>
+              <nodeVersion>${node.version}</nodeVersion>
+            </configuration>
+          </execution>
+          <execution>
+            <id>npm-ci</id>
+            <goals>
+              <goal>npm</goal>
+            </goals>
+            <phase>generate-resources</phase>
+            <configuration>
+              <arguments>ci --ignore-scripts</arguments>
+            </configuration>
+          </execution>
+          <execution>
+            <id>npm-build</id>
+            <goals>
+              <goal>npm</goal>
+            </goals>
+            <phase>generate-resources</phase>
+            <configuration>
+              <arguments>run build</arguments>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>com.google.cloud.tools</groupId>
+        <artifactId>jib-maven-plugin</artifactId>
+        <version>${jib-maven-plugin.version}</version>
+        <configuration>
+          <from>
+            <image>${jib.from.image}</image>
+          </from>
+          <to>
+            <image>${jib.to.image}</image>
+          </to>
+          <container>
+            <mainClass>com.trivyexplorer.TrivyScanApplication</mainClass>
+            <ports>
+              <port>9080</port>
+            </ports>
+            <creationTime>USE_CURRENT_TIMESTAMP</creationTime>
+          </container>
+        </configuration>
       </plugin>
     </plugins>
   </build>

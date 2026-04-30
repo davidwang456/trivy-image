@@ -4,6 +4,10 @@ node_modules
 
 # Java backend
 /backend/target/
+/backend/src/main/resources/public/
+
+# Node installed by frontend-maven-plugin under backend (fallback if installDirectory changes)
+/backend/node/
 
 # local env, test and user specific files
 *.local

@@ -31,6 +31,20 @@
           @click="goTo('scan')"
         />
         <v-list-item
+          v-if="isAuthenticated && isAdmin"
+          :active="route.name === 'scan-namespace'"
+          prepend-icon="mdi-file-tree"
+          title="Scan namespace"
+          @click="goTo('scan-namespace')"
+        />
+        <v-list-item
+          v-if="isAuthenticated && isAdmin"
+          :active="route.name === 'scan-repo'"
+          prepend-icon="mdi-source-repository"
+          title="Scan repo"
+          @click="goTo('scan-repo')"
+        />
+        <v-list-item
           v-if="isAuthenticated"
           :active="route.name === 'dashboard'"
           prepend-icon="mdi-briefcase-outline"

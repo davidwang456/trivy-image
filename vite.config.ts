@@ -10,7 +10,8 @@ import Vuetify, { transformAssetUrls } from "vite-plugin-vuetify"
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  base: "/trivy-vulnerability-explorer",
+  // Must match server.servlet.context-path in backend application.yml for unified deploy.
+  base: "/trivy-vulnerability-explorer/",
   plugins: [
     AutoImport({
       imports: [
@@ -56,11 +57,15 @@ export default defineConfig({
     },
     extensions: [".js", ".json", ".jsx", ".mjs", ".ts", ".tsx", ".vue"],
   },
+  build: {
+    outDir: "backend/src/main/resources/public",
+    emptyOutDir: true,
+  },
   server: {
     port: 8080,
     proxy: {
       "/api": {
-        target: "http://localhost:8081",
+        target: "http://localhost:9080/trivy-vulnerability-explorer",
         changeOrigin: true,
       },
     },

@@ -1,3 +1,5 @@
+import { apiBase } from "@/api/apiBase"
+
 export type LoginRequestBody = {
   username: string
   password: string
@@ -18,21 +20,10 @@ export type CreateUserBody = {
   role: "admin" | "user"
 }
 
-function apiBase(): string {
-  const base = import.meta.env.VITE_API_BASE as string | undefined
-  if (base && base.trim()) {
-    return base.trim()
-  }
-  if (typeof window !== "undefined") {
-    const protocol = window.location.protocol === "https:" ? "https:" : "http:"
-    if (window.location.port !== "8081") {
-      return `${protocol}//${window.location.hostname}:8081`
-    }
-  }
-  return ""
-}
-
-async function readErrorMessage(res: Response, fallback: string): Promise<string> {
+async function readErrorMessage(
+  res: Response,
+  fallback: string,
+): Promise<string> {
   const text = await res.text()
   let message = text || res.statusText
   try {
@@ -47,7 +38,7 @@ async function readErrorMessage(res: Response, fallback: string): Promise<string
 function withApiBaseHint(error: unknown): Error {
   if (error instanceof TypeError) {
     return new Error(
-      "Network error: cannot reach backend API. Please ensure backend is running on http://localhost:8081 or set VITE_API_BASE.",
+      "Network error: cannot reach backend API. In local dev ensure the API is on port 9080 or set VITE_API_BASE.",
     )
   }
   return error instanceof Error ? error : new Error(String(error))

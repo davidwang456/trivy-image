@@ -5,6 +5,8 @@ import LoginPage from "@/pages/LoginPage.vue"
 import ProjectPage from "@/pages/ProjectPage.vue"
 import RegistryDatasourcePage from "@/pages/RegistryDatasourcePage.vue"
 import ScanPage from "@/pages/ScanPage.vue"
+import ScanNamespacePage from "@/pages/ScanNamespacePage.vue"
+import ScanRepoPage from "@/pages/ScanRepoPage.vue"
 import SystemPage from "@/pages/SystemPage.vue"
 import UserManagementPage from "@/pages/UserManagementPage.vue"
 /**
@@ -43,6 +45,18 @@ const router = createRouter({
       name: "dashboard",
       component: DashboardPage,
       meta: { i18nKey: "dashboard", requiresAuth: true },
+    },
+    {
+      path: "/scan-namespace",
+      name: "scan-namespace",
+      component: ScanNamespacePage,
+      meta: { i18nKey: "scan-namespace", requiresAuth: true, adminOnly: true },
+    },
+    {
+      path: "/scan-repo",
+      name: "scan-repo",
+      component: ScanRepoPage,
+      meta: { i18nKey: "scan-repo", requiresAuth: true, adminOnly: true },
     },
     {
       path: "/systems",

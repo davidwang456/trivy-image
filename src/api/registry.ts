@@ -1,3 +1,5 @@
+import { apiBase } from "@/api/apiBase"
+
 export type RegistryDatasource = {
   id: number
   name: string
@@ -29,16 +31,6 @@ export type RegistrySchedule = {
   lastRunAt?: string
   createTime: string
   updateTime: string
-}
-
-function apiBase(): string {
-  const base = import.meta.env.VITE_API_BASE as string | undefined
-  if (base && base.trim()) return base.trim()
-  if (typeof window !== "undefined" && window.location.port !== "8081") {
-    const protocol = window.location.protocol === "https:" ? "https:" : "http:"
-    return `${protocol}//${window.location.hostname}:8081`
-  }
-  return ""
 }
 
 const withCredentials: RequestInit = { credentials: "include" }
@@ -118,6 +110,30 @@ export function listHarborImages(datasourceId: number, repoName: string) {
   const q = new URLSearchParams({ repoName }).toString()
   return requestJson<string[]>(
     `${apiBase()}/api/registry-datasources/${datasourceId}/images?${q}`,
+  )
+}
+
+export function listSwrNamespaces(datasourceId: number) {
+  return requestJson<string[]>(
+    `${apiBase()}/api/swr/datasources/${datasourceId}/namespaces`,
+  )
+}
+
+export function listSwrRepos(datasourceId: number, namespace?: string) {
+  const q = namespace ? `?${new URLSearchParams({ namespace }).toString()}` : ""
+  return requestJson<string[]>(
+    `${apiBase()}/api/swr/datasources/${datasourceId}/repos${q}`,
+  )
+}
+
+export function listSwrImages(
+  datasourceId: number,
+  namespace: string,
+  repoName: string,
+) {
+  const q = new URLSearchParams({ namespace, repoName }).toString()
+  return requestJson<string[]>(
+    `${apiBase()}/api/swr/datasources/${datasourceId}/images?${q}`,
   )
 }
 

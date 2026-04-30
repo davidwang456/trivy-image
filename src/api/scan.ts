@@ -1,8 +1,20 @@
+import { apiBase } from "@/api/apiBase"
 import type { Version1OrVersion2 } from "@/types"
 
 export type ScanRequestBody = {
   datasourceId: number
   imageRef: string
+}
+
+export type SwrNamespaceScanRequestBody = {
+  datasourceId: number
+  namespace: string
+}
+
+export type SwrRepoScanRequestBody = {
+  datasourceId: number
+  namespace: string
+  repoName: string
 }
 
 export type ScanResponseBody = {
@@ -78,28 +90,10 @@ export type ImportScanRequestBody = {
   report: Version1OrVersion2
 }
 
-function apiBase(): string {
-  const base = import.meta.env.VITE_API_BASE as string | undefined
-  if (base && base.trim()) {
-    return base.trim()
-  }
-
-  // In local development, calling backend directly avoids "Failed to fetch"
-  // when the frontend is not served with a proxy.
-  if (typeof window !== "undefined") {
-    const protocol = window.location.protocol === "https:" ? "https:" : "http:"
-    if (window.location.port !== "8081") {
-      return `${protocol}//${window.location.hostname}:8081`
-    }
-  }
-
-  return ""
-}
-
 function withApiBaseHint(error: unknown): Error {
   if (error instanceof TypeError) {
     return new Error(
-      "Network error: cannot reach backend API. Please ensure backend is running on http://localhost:8081 or set VITE_API_BASE.",
+      "Network error: cannot reach backend API. In local dev ensure the API is on port 9080 or set VITE_API_BASE.",
     )
   }
   return error instanceof Error ? error : new Error(String(error))
@@ -148,6 +142,46 @@ export async function batchScanImages(body: {
 }): Promise<ScanResponseBody[]> {
   try {
     const url = `${apiBase()}/api/scans/batch`
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+      ...withCredentials,
+    })
+    if (!res.ok) {
+      throw new Error(await readErrorMessage(res, `HTTP ${res.status}`))
+    }
+    return res.json() as Promise<ScanResponseBody[]>
+  } catch (error: unknown) {
+    throw withApiBaseHint(error)
+  }
+}
+
+export async function scanSwrNamespace(
+  body: SwrNamespaceScanRequestBody,
+): Promise<ScanResponseBody[]> {
+  try {
+    const url = `${apiBase()}/api/swr/scans/namespace`
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+      ...withCredentials,
+    })
+    if (!res.ok) {
+      throw new Error(await readErrorMessage(res, `HTTP ${res.status}`))
+    }
+    return res.json() as Promise<ScanResponseBody[]>
+  } catch (error: unknown) {
+    throw withApiBaseHint(error)
+  }
+}
+
+export async function scanSwrRepo(
+  body: SwrRepoScanRequestBody,
+): Promise<ScanResponseBody[]> {
+  try {
+    const url = `${apiBase()}/api/swr/scans/repo`
     const res = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
