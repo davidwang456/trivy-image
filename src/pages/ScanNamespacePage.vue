@@ -34,13 +34,19 @@
           </v-col>
           <v-col cols="12" md="4">
             <v-select
-              v-model="selectedImageRef"
+              v-model="selectedImageRefs"
               :items="imageItems"
               label="Image"
               variant="solo-filled"
               flat
               density="comfortable"
               hide-details="auto"
+              multiple
+              chips
+              closable-chips
+              clearable
+              hint="可多选；不选默认扫描当前 Namespace 下全部镜像"
+              persistent-hint
               :disabled="!selectedNamespace"
               :loading="loadingImages"
             />
@@ -50,10 +56,12 @@
               color="primary"
               prepend-icon="mdi-radar"
               :loading="scanning"
-              :disabled="!selectedDatasourceId || !selectedImageRef"
+              :disabled="
+                !selectedDatasourceId || effectiveImageRefs.length === 0
+              "
               @click="runScan"
             >
-              Scan selected image
+              Scan selected/all images
             </v-btn>
           </v-col>
         </v-row>
@@ -99,7 +107,7 @@ import {
   listSwrNamespaces,
   listSwrRepos,
 } from "@/api/registry"
-import { scanImage } from "@/api/scan"
+import { batchScanImages } from "@/api/scan"
 
 type JobResultRow = {
   id: number
@@ -117,7 +125,7 @@ type JobResultRow = {
 const swrDatasources = ref<{ id: number; name: string }[]>([])
 const selectedDatasourceId = ref<number>()
 const selectedNamespace = ref<string>()
-const selectedImageRef = ref<string>()
+const selectedImageRefs = ref<string[]>([])
 const namespaces = ref<string[]>([])
 const images = ref<string[]>([])
 const loadingNamespaces = ref(false)
@@ -131,6 +139,9 @@ const datasourceItems = computed(() =>
 )
 const namespaceItems = computed(() => namespaces.value)
 const imageItems = computed(() => images.value)
+const effectiveImageRefs = computed(() =>
+  selectedImageRefs.value.length > 0 ? selectedImageRefs.value : images.value,
+)
 
 const jobHeaders = [
   { title: "JobId", key: "jobId" },
@@ -166,14 +177,14 @@ onMounted(async () => {
 
 async function onDatasourceChanged() {
   selectedNamespace.value = undefined
-  selectedImageRef.value = undefined
+  selectedImageRefs.value = []
   namespaces.value = []
   images.value = []
   await loadNamespaces()
 }
 
 async function onNamespaceChanged() {
-  selectedImageRef.value = undefined
+  selectedImageRefs.value = []
   images.value = []
   await loadImages()
 }
@@ -221,13 +232,14 @@ async function loadImages() {
 }
 
 async function runScan() {
-  if (!selectedDatasourceId.value || !selectedImageRef.value) return
+  if (!selectedDatasourceId.value || effectiveImageRefs.value.length === 0)
+    return
   scanning.value = true
   error.value = undefined
   try {
-    const resList = await scanImage({
+    const resList = await batchScanImages({
       datasourceId: selectedDatasourceId.value,
-      imageRef: selectedImageRef.value,
+      imageRefs: effectiveImageRefs.value,
     })
     jobRows.value = resList.map((item) => ({
       id: item.id,

@@ -80,25 +80,48 @@ public class SwrService {
     SwrClient client = getOrBuildSwrClient(datasourceId);
     JsonNode root = swrGet(client, "/v2/manage/namespaces?limit=1000");
     Set<String> namespaces = new LinkedHashSet<>();
-    collectStringFields(root, namespaces, "name", "namespace", "namespace_name");
+    JsonNode namespaceItems = root.path("namespaces");
+    if (namespaceItems.isArray()) {
+      for (JsonNode item : namespaceItems) {
+        String name = item.path("name").asText(null);
+        if (StringUtils.hasText(name)) {
+          namespaces.add(name.trim());
+        }
+      }
+    } else {
+      collectStringFields(root, namespaces, "name", "namespace", "namespace_name");
+    }
     return namespaces.stream().sorted().toList();
   }
 
   @Transactional(readOnly = true)
   public List<String> listRepos(Long datasourceId, String namespace) {
+    SwrClient client = getOrBuildSwrClient(datasourceId);
     Set<String> repos = new LinkedHashSet<>();
-    if (StringUtils.hasText(namespace)) {
-      SwrClient client = getOrBuildSwrClient(datasourceId);
-      JsonNode root =
-          swrGet(client, "/v2/manage/namespaces/" + urlEncode(namespace.trim()) + "/repos?limit=1000");
-      collectStringFields(root, repos, "name", "repo_name", "repository", "path");
+    String trimmedNamespace = StringUtils.hasText(namespace) ? namespace.trim() : null;
+    String path =
+        trimmedNamespace == null
+            ? "/v2/manage/repos?limit=1000"
+            : "/v2/manage/repos?namespace=" + urlEncode(trimmedNamespace) + "&limit=1000";
+    JsonNode root = swrGet(client, path);
+
+    if (root.isArray()) {
+      for (JsonNode item : root) {
+        String repoName = item.path("name").asText(null);
+        if (!StringUtils.hasText(repoName)) {
+          continue;
+        }
+        String ns = item.path("namespace").asText(null);
+        if (trimmedNamespace == null && StringUtils.hasText(ns)) {
+          repos.add(ns.trim() + "/" + repoName.trim());
+        } else {
+          repos.add(repoName.trim());
+        }
+      }
       return repos.stream().sorted().toList();
     }
-    for (String ns : listNamespaces(datasourceId)) {
-      for (String repo : listRepos(datasourceId, ns)) {
-        repos.add(ns + "/" + repo);
-      }
-    }
+
+    collectStringFields(root, repos, "name", "repo_name", "repository", "path");
     return repos.stream().sorted().toList();
   }
 
